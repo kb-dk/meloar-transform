@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<dublin_core schema="dc">
+<dcvalue element="title" language="da_DK">Beretning KBM2053</dcvalue>
+<dcvalue element="date" language="da_DK" qualifier="issued">2016-07-01</dcvalue>
+<dcvalue element="relation" language="da_DK" qualifier="uri">http://www.kulturarv.dk/fundogfortidsminder/resource/157994</dcvalue>
+</dublin_core>

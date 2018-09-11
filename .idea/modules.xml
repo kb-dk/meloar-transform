@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/loar-beretningsarkiv.iml" filepath="$PROJECT_DIR$/loar-beretningsarkiv.iml" />
+      <module fileurl="file://$PROJECT_DIR$/packager/packager.iml" filepath="$PROJECT_DIR$/packager/packager.iml" />
+      <module fileurl="file://$PROJECT_DIR$/transformation/transformation.iml" filepath="$PROJECT_DIR$/transformation/transformation.iml" />
+    </modules>
+  </component>
+</project>

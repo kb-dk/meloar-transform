@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+<soapenv:Body>
+<ns1:getDocumentByKeyResponse   soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"   xmlns:ns1="http://www.taleo.com/ws/integration/toolkit/2005/07">
+    <Document xmlns="http://www.taleo.com/ws/integration/toolkit/2005/07">
+        <Attributes>
+            <Attribute name="duration">0:00:00.084</Attribute>
+            <Attribute name="count">7</Attribute>
+            <Attribute name="entity">Requisition</Attribute>
+            <Attribute name="mode">XML</Attribute>
+            <Attribute name="version">http://www.taleo.com/ws/tee800/2009/01</Attribute>
+        </Attributes>
+        <Content>
+            <ExportXML xmlns="http://www.taleo.com/ws/integration/toolkit/2005/07">
+                <record>
+                    <field name="ContestNumber">1300000F</field>
+                    <field name="ManagerRequisitionTitle">Project Manager</field>
+                </record>
+                <record>
+                    <field name="ContestNumber">1300000H</field>
+                    <field name="ManagerRequisitionTitle">Project Manager</field>
+                </record>
+                <record>
+                    <field name="ContestNumber">1300000T</field>
+                    <field name="ManagerRequisitionTitle">Project Manager</field>
+                </record>
+                <record>
+                    <field name="ContestNumber">13000018</field>
+                    <field name="ManagerRequisitionTitle">Project Manager</field>
+                </record>
+                <record>
+                    <field name="ContestNumber">000123</field>
+                    <field name="ManagerRequisitionTitle">Project Manager</field>
+                </record>
+                <record>
+                    <field name="ContestNumber">1300000R</field>
+                    <field name="ManagerRequisitionTitle">Project Manager</field>
+                </record>
+                <record>
+                    <field name="ContestNumber">13000016</field>
+                    <field name="ManagerRequisitionTitle">Project Manager</field>
+                </record>
+            </ExportXML>
+        </Content>
+    </Document>
+</ns1:getDocumentByKeyResponse>
+</soapenv:Body>
+</soapenv:Envelope>

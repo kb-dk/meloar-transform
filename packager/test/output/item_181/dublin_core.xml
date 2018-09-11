@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<dublin_core schema="dc">
+<dcvalue element="title" language="da_DK">Beretning for prøvegravning</dcvalue>
+<dcvalue element="date" language="da_DK" qualifier="issued">2013-01-15</dcvalue>
+<dcvalue element="description" language="da_DK">Beretning for arkæologisk forundersøgelse</dcvalue>
+<dcvalue element="relation" language="da_DK" qualifier="uri">http://www.kulturarv.dk/fundogfortidsminder/resource/94668</dcvalue>
+</dublin_core>
