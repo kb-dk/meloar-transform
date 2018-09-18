@@ -24,8 +24,10 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-.idea/
-packager/target/generated-sources/
-packager/test/files/
-packager/test/output/
-loar-beretningsarkiv.iml
+/packager/target/generated-sources/
+/packager/test/files/
+/packager/test/output/
+/loar-beretningsarkiv.iml
+/.idea/
+packager/loar-beretningsarkiv-packager.iml
+packager/test/input/

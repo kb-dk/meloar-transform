@@ -1,4 +1,4 @@
-package dk.statsbiblioteket.mediestream.loar.beretningsarkiv;
+package dk.statsbiblioteket.mediestream.loar;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -25,6 +25,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 
 public class packager {
+
     public static void translateFile(String inputfile, String outputdirectory) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
@@ -58,7 +59,6 @@ public class packager {
                                     pdfFileName = tmpFileName;
                                 }
                             }
-                            // todo and maybe the license...
                             tmpList = digitalDocumentation.getElementsByTagName("link");
                             if (tmpList.getLength()>0) {
                                 String link = tmpList.item(0).getTextContent();
@@ -70,7 +70,42 @@ public class packager {
                                     fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
                                 }
                             }
+                            // todo and the xml for the parent record
+                            String recordxmlFileName = "recordxml_item_"+i+".xml";
+                            boolean recordxmlexists = false;
+                            Node ff_digitalDocumentations = digitalDocumentation.getParentNode();
+                            if (ff_digitalDocumentations!=null) {
+                                Node site = ff_digitalDocumentations.getParentNode();
+                                if (site!=null) {
+                                    Node metadata = site.getParentNode();
+                                    if (metadata!=null) {
+                                        Node record = metadata.getParentNode();
+                                        if (record!=null) {
+                                            builder = factory.newDocumentBuilder();
+                                            Document recordxml = builder.newDocument();
+                                            recordxml.adoptNode(record);
+                                            recordxml.appendChild(record);
 
+                                            // write the content into xml file
+                                            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                                            Transformer transformer = transformerFactory.newTransformer();
+                                            transformer.setOutputProperty("indent", "yes");
+                                            DOMSource source = new DOMSource(recordxml);
+                                            StreamResult streamResult = new StreamResult(new File(item_directory,recordxmlFileName));
+                                            transformer.transform(source, streamResult);
+
+                                            // Output to console for testing
+                                            StreamResult consoleResult = new StreamResult(System.out);
+                                            transformer.transform(source, consoleResult);
+                                            System.out.println("\n");
+
+                                            recordxmlexists=true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // todo and maybe the license...
 
                             //The contents file simply enumerates, one file per line, the bitstream file names
                             //The bitstream name may optionally be followed by \tpermissions:PERMISSIONS
@@ -78,6 +113,7 @@ public class packager {
                             contents.createNewFile();
                             FileWriter fileWriter = new FileWriter(contents);
                             fileWriter.write(pdfFileName + "\tpermissions:-[r|w] 'Administrator'\n");
+                            if (recordxmlexists) {fileWriter.write(recordxmlFileName);}
                             //fileWriter.write(licensefileName + "\n");
                             fileWriter.flush();
                             fileWriter.close();
