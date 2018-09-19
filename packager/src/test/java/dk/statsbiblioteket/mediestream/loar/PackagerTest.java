@@ -19,7 +19,7 @@ public class PackagerTest {
     @Test
     public void testTranslateFile() {
 
-        dk.statsbiblioteket.mediestream.loar.packager.translateFile(input_file, output_dir);
+        Packager.translateFile(input_file, output_dir, 1);
     }
 
 

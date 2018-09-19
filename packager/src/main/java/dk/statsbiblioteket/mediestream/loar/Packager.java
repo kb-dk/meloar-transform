@@ -24,9 +24,10 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 
-public class packager {
+public class Packager {
 
-    public static void translateFile(String inputfile, String outputdirectory) {
+
+    public static void translateFile(String inputfile, String outputdirectory, int seed) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
             File file = new File(inputfile);
@@ -35,7 +36,7 @@ public class packager {
 
             //Vi skal finde <digitalDocumentation> med <documentType> <term>Beretning</term>
             NodeList digitalDocumentationList = inputdoc.getElementsByTagName("digitalDocumentation");
-            System.out.println(digitalDocumentationList.getLength());
+            System.out.println("digitalDocumentationList.getLength() = "+digitalDocumentationList.getLength());
             //We need a directory for each Beretning
             for (int i = 0; i < digitalDocumentationList.getLength(); i++) {
                 Element digitalDocumentation = (Element) digitalDocumentationList.item(i);
@@ -47,7 +48,7 @@ public class packager {
                         Node term = termList.item(0);
                         System.out.println("term.getTextContent()"+term.getTextContent());
                         if (term.getTextContent()!=null && term.getTextContent().equalsIgnoreCase("Beretning")) {
-                            File item_directory = new File(outputdirectory, "item_"+i);
+                            File item_directory = new File(outputdirectory, "item_"+seed+"_"+i);
                             item_directory.mkdir();
 
                             // write the pdf file from <link> to <filename> in this directory
@@ -95,9 +96,9 @@ public class packager {
                                             transformer.transform(source, streamResult);
 
                                             // Output to console for testing
-                                            StreamResult consoleResult = new StreamResult(System.out);
-                                            transformer.transform(source, consoleResult);
-                                            System.out.println("\n");
+                                            //StreamResult consoleResult = new StreamResult(System.out);
+                                            //transformer.transform(source, consoleResult);
+                                            //System.out.println("\n");
 
                                             recordxmlexists=true;
                                         }
@@ -112,7 +113,7 @@ public class packager {
                             File contents = new File(item_directory, "contents");
                             contents.createNewFile();
                             FileWriter fileWriter = new FileWriter(contents);
-                            fileWriter.write(pdfFileName + "\tpermissions:-[r|w] 'Administrator'\n");
+                            fileWriter.write(pdfFileName + "\tpermissions:-r 'Administrator'\n");
                             if (recordxmlexists) {fileWriter.write(recordxmlFileName);}
                             //fileWriter.write(licensefileName + "\n");
                             fileWriter.flush();
@@ -246,5 +247,25 @@ public class packager {
         dcvalue.setAttribute("language", "da_DK");//no qualifier
         dcvalue.setTextContent(textContent);
         root.appendChild(dcvalue);
+    }
+
+    /**
+     * TODO
+     * @param Args
+     */
+    public static void main(String[] Args) {
+        File inputdir = new File(Args[0]);
+        String outputdir = Args[1];
+        if (inputdir.isDirectory()) {
+            String[] inputfiles = inputdir.list();
+            System.out.println("inputfiles.length = "+inputfiles.length);
+            for (int seed = 0; seed<inputfiles.length; seed++) {
+                String file = inputfiles[seed];
+                System.out.println("processing file "+file);
+                translateFile(inputdir.getAbsolutePath()+"/"+file, outputdir, seed);
+                System.out.println("finished file "+file);
+            }
+        }
+
     }
 }
