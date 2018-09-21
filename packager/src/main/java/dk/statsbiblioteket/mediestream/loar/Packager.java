@@ -24,9 +24,23 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 
+/**
+ * The class Packager is home to the translateFile method, which "translates" oai-harvested xml
+ * from REPOSITORY="http://www.kulturarv.dk/ffrepox/OAIHandler" METADATA_PREFIX="ff" PROJECT="ff_slks"
+ * into the DSpace Simple Archive Format, which can be ingested into a DSpace archive
+ * (https://wiki.duraspace.org/display/DSDOC6x/Importing+and+Exporting+Items+via+Simple+Archive+Format).
+ */
 public class Packager {
 
-
+    /**
+     * Translate oai-harvested xml file into a number of "beretning" items in simple archive format
+     * to be ingested into LOAR. The method finds the "beretning" entries in the input file, downloads
+     * the corresponding pdf's, creates a corresponding Dublin Core metadata file and a contents file, and
+     * writes all three files to a new item directory in the output directory.
+     * @param inputfile oai-harvested xml from REPOSITORY="http://www.kulturarv.dk/ffrepox/OAIHandler"
+     * @param outputdirectory the output directory for items in DSpace Simple Archive Format
+     * @param seed the seed ensures that item directory names are unique
+     */
     public static void translateFile(String inputfile, String outputdirectory, int seed) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
