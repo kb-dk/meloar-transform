@@ -1,5 +1,7 @@
 package dk.statsbiblioteket.mediestream.loar;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -15,13 +17,9 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 
 /**
@@ -31,6 +29,7 @@ import java.nio.channels.ReadableByteChannel;
  * (https://wiki.duraspace.org/display/DSDOC6x/Importing+and+Exporting+Items+via+Simple+Archive+Format).
  */
 public class Packager {
+    private static Logger log = LoggerFactory.getLogger(Packager.class);
 
     /**
      * Translate oai-harvested xml file into a number of "beretning" items in simple archive format
@@ -42,6 +41,7 @@ public class Packager {
      * @param seed the seed ensures that item directory names are unique
      */
     public static void translateFile(String inputfile, String outputdirectory, int seed) {
+        log.debug("entering translateFile method with parameters: ("+inputfile+", "+outputdirectory+", "+seed+")");
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
             File file = new File(inputfile);
@@ -51,7 +51,7 @@ public class Packager {
             //Vi skal finde <digitalDocumentation> med <documentType> <term>Beretning</term>
             NodeList digitalDocumentationList = inputdoc.getElementsByTagName("digitalDocumentation");
             System.out.println("digitalDocumentationList.getLength() = "+digitalDocumentationList.getLength());
-            //We need a directory for each Beretning
+            //We need a directory for each Beretning, iff there is a pdf document at the other end
             for (int i = 0; i < digitalDocumentationList.getLength(); i++) {
                 Element digitalDocumentation = (Element) digitalDocumentationList.item(i);
                 NodeList documentTypeList = digitalDocumentation.getElementsByTagName("documentType");
@@ -79,13 +79,23 @@ public class Packager {
                                 String link = tmpList.item(0).getTextContent();
                                 if (link!=null && !link.equals("")) {
                                     URL url = new URL(link);
+                                    try {
+                                        url.openStream();
+                                    } catch (FileNotFoundException e) {
+                                        log.error("pdf does not exist: "+link, e);
+                                        e.printStackTrace();
+                                        item_directory.delete();
+                                        continue;
+                                    }
+
                                     ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-                                    FileOutputStream fileOutputStream = new FileOutputStream(new File(item_directory, pdfFileName));
-                                    FileChannel fileChannel = fileOutputStream.getChannel();
+                                    File pdfFile = new File(item_directory, pdfFileName);
+                                    FileOutputStream fileOutputStream = new FileOutputStream(pdfFile);
+                                    //FileChannel fileChannel = fileOutputStream.getChannel();
                                     fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
                                 }
                             }
-                            // todo and the xml for the parent record
+                            // and the xml for the parent record
                             String recordxmlFileName = "recordxml_item_"+i+".xml";
                             boolean recordxmlexists = false;
                             Node ff_digitalDocumentations = digitalDocumentation.getParentNode();
@@ -232,7 +242,9 @@ public class Packager {
 
 
         } catch (ParserConfigurationException e) {
+            log.error("ParserConfigurationException", e);
             e.printStackTrace();
+            return;
         } catch (SAXException e) {
             e.printStackTrace();
         } catch (IOException e) {
