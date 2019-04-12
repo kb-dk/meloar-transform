@@ -16,7 +16,9 @@
     </parent>
 
     <modules>
-        <module>packager</module>
+        <module>fof</module>
+        <module>kirker</module>
+        <!--<module>virk</module>-->
     </modules>
 
     <properties>
