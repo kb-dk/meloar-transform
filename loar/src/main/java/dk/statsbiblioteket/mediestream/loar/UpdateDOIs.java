@@ -15,7 +15,7 @@ import java.util.*;
  * updated in the metadata as expected. This is what this class fixes.
  *
  * The metadata can be exported as csv, one item or one collection at a time or all content...
- * The csv can the be updated and imported.
+ * The csv can then be updated and imported.
  *
  * Note: It is not recommended to import CSV files of more than 1,000 lines (i.e. 1,000 items).
  * We have a total of 4122 items in LOAR as of Tue Nov 19 12:40:38 CET 2019
@@ -27,6 +27,25 @@ import java.util.*;
  * No, I think one collection at a time is safer.
  * Then we won't update the items that already have correct DOIs.
  *
+ * 2. collection: "1902/4276" (Datasprint 2019)
+ * Size:2
+ * By hand! Can only find one of two DOIs
+ *
+ * 3. collection: "1902/4119" (Ruben Recordings)
+ * Size:154
+ *
+ * 4. collection: Department of Agroecology: AnaEE "1902/4286"
+ * Size:1
+ * Hvorfor har den ikke automatisk fået en DOI?
+ * Something is broken!
+ *
+ * 5. collection:  Royal Danish Library
+ * → Events
+ * → Archive for Danish Literature in 3D: Data, Danish Literature & Distant Reading "1902/316"
+ * Size:5
+ * 4 of 5 already have DOIs
+ * By hand!
+ * Wait! "./bin/dspace doi-organiser -u" ser ud til at virke i dag...
  */
 public class UpdateDOIs {
 
@@ -71,14 +90,25 @@ public class UpdateDOIs {
                 break;
             }
         }
+        // there may not be a column "dc.identifier.uri[]" (Ruben collection)
+        // in which case we add this column at the end
+        if (columnURIs==headings_line.length) {
+            headings_line = Arrays.copyOf(headings_line, columnURIs+1);
+            headings_line[columnURIs] = "dc.identifier.uri[]";
+            for (Integer key: metadataMap.keySet()) {
+                String[] metadata = metadataMap.get(key);
+                metadataMap.put(key, Arrays.copyOf(metadata, columnURIs+1));
+            }
+        }
 
         // read "dois and urls csv" into a DOIS-AND-URLS MAP (it is really a DOI and HANDLE CSV,
         // and the map is from HANDLE to DOI)
         Map<String, String> mapFromHandlesToDOIs = new HashMap<String, String>();
         try {
             reader = new CSVReader(new FileReader(doisandurlscsv), ',');
-            while ((line = reader.readNext()) != null) {
-                mapFromHandlesToDOIs.put(line[1], line[0]);
+            String[] lineArray;
+            while ((lineArray = reader.readNext()) != null) {
+                mapFromHandlesToDOIs.put(lineArray[1], lineArray[0]);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -99,7 +129,7 @@ public class UpdateDOIs {
             if (metadata[columnURI]!=null && !metadata[columnURI].isEmpty() && metadata[columnURI].contains(loar_uri)) {
                 identifier = metadata[columnURI];
                 handle = identifier.substring(loar_uri.length());
-            } else if (metadata[columnURIs]!=null && !metadata[columnURIs].isEmpty()) {
+            } else if (columnURIs<metadata.length && metadata[columnURIs]!=null && !metadata[columnURIs].isEmpty()) {
                 identifierList = metadata[columnURIs].split("\\|\\|");
                 for (String id: identifierList) {
                     System.out.println("log DEBUG: id="+id);
@@ -116,7 +146,8 @@ public class UpdateDOIs {
             String doi = mapFromHandlesToDOIs.get(handle);
 
             //update metadata map
-            metadata[columnURI]="";
+            metadata[columnURI] = "";
+
             Set<String> identifierSet = new HashSet<String>();
             if (identifier!=null) {
                 identifierSet.add(identifier);
@@ -131,6 +162,7 @@ public class UpdateDOIs {
             } else {
                 System.out.println("log WARNING: could not find DOI!");
             }
+
             Iterator<String> stringIterator= identifierSet.iterator();
             metadata[columnURIs] = stringIterator.next();
             while (stringIterator.hasNext()) {
