@@ -39,13 +39,32 @@ import java.util.*;
  * Hvorfor har den ikke automatisk fået en DOI?
  * Something is broken!
  *
- * 5. collection:  Royal Danish Library
- * → Events
- * → Archive for Danish Literature in 3D: Data, Danish Literature & Distant Reading "1902/316"
+ * 5. collection:  Royal Danish Library → Events → Archive for Danish Literature in 3D:
+ * Data, Danish Literature & Distant Reading "1902/316"
  * Size:5
  * 4 of 5 already have DOIs
  * By hand!
  * Wait! "./bin/dspace doi-organiser -u" ser ud til at virke i dag...
+ * No, sorry!
+ * By hand!
+ *
+ * 6. collection: Royal Danish Library → Open Digital Collections → IT Development → Machine learning "1902/326"
+ * Size:2
+ * By hand!
+ *
+ * 7. collection: Royal Danish Library → Open Digital Collections → Newspapers from Royal Danish Library →
+ * Front pages of Berlingske "1902/322"
+ * Size:1
+ * By hand!
+ *
+ * 8. collection: Royal Danish Library → Research Data → Military land use in Denmark 1870-2017 "1902/4117"
+ * Size:1
+ * By hand!
+ *
+ * 9. collection: LOAR Home → Royal Danish Library → Research Data → Soviet and Warsaw-pact maps "1902/4116"
+ * Size:1
+ * By hand!
+ *
  */
 public class UpdateDOIs {
 
