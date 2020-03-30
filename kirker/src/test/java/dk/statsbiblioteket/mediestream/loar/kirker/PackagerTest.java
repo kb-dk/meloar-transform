@@ -7,8 +7,8 @@ import org.testng.annotations.Test;
 import java.io.File;
 
 public class PackagerTest {
-    private String input_dir = "/home/baj/Projects/meloar-transform/kirker/data/kirker_20190322/kirker";
-    private String output_dir = "/home/baj/Projects/meloar-transform/kirker/data/output";
+    private String input_dir = "/home/baj/Projects/meloar-transform/kirker/data/kirker/xml";
+    private String output_dir = "/home/baj/Projects/meloar-transform/kirker/data/output/kirker_20200318";
 
 
     @BeforeMethod

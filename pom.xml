@@ -8,7 +8,6 @@
     <version>0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-
     <parent>
         <groupId>dk.statsbiblioteket.sbprojects</groupId>
         <artifactId>sbprojects-parent</artifactId>
@@ -22,9 +21,22 @@
         <!--<module>virk</module>-->
     </modules>
 
+    <repositories>
+        <repository>
+            <id>sbforge-nexus</id>
+            <url>https://sbforge.org/nexus/content/groups/public</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <properties>
-
-
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
 
@@ -51,18 +63,16 @@
             <version>2.4</version>
             <classifier>jdk15</classifier>
         </dependency>
-
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>6.9.10</version>
             <scope>compile</scope>
         </dependency>
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.7</version>
+            <version>1.7.28</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -71,9 +81,7 @@
             <scope>runtime</scope>
         </dependency>
     </dependencies>
-    <repositories>
 
-</repositories>
 
     <build>
         <plugins>

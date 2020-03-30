@@ -125,10 +125,28 @@ public class Packager {
                             addElement("coverage", "spatial", place_coordinates, dcdoc, dcroot);
                         }
                         break;
+                    case "volume_ss": //add volumes to dublin core document
+                        String volume = node.getTextContent();
+                        if (volume!=null && !volume.equals("")) {
+                            addElement("relation", "ispartof", volume, dcdoc, dcroot);
+                        }
+                        break;
+                    case "date_issued_is": //add date issued to dublin core document
+                        String date = node.getTextContent();
+                        if (date!=null && !date.equals("")) {
+                            addElement("date", "issued", date, dcdoc, dcroot);
+                        }
+                        break;
+                    case "author": //add author to DC
+                        String author = node.getTextContent();
+                        if (author!=null && !author.equals("")) {
+                            addElement("contributor", "author", author, dcdoc, dcroot);
+                        }
                 }
             }
-            //todo issued date
-            //todo author
+
+            //add publisher to DC
+            addElement("publisher", null, "Nationalmuseet", dcdoc, dcroot);
 
             // todo write xml file?
             // todo and maybe the license...
@@ -136,7 +154,8 @@ public class Packager {
             contentsFileWriter.flush();
             contentsFileWriter.close();
 
-
+            // clean up the dublin core
+            dcdoc.normalizeDocument();
             // write the dublin core into xml file
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -183,6 +202,15 @@ public class Packager {
         }
         dcvalue.setAttribute("language", "da_DK");//no qualifier
         dcvalue.setTextContent(textContent);
+        if (root.hasChildNodes()) {
+            NodeList nodelist = root.getChildNodes();
+            for (int i = 0; i < nodelist.getLength(); i++) {
+                Node node = nodelist.item(i);
+                if (node.isEqualNode(dcvalue)) {
+                    return;
+                }
+            }
+        }
         root.appendChild(dcvalue);
     }
 
