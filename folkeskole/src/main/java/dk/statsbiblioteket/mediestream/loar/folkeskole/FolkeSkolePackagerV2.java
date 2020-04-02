@@ -13,17 +13,26 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
-import java.net.URI;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-public class FolkeskoleSimplePackager {
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
+
+/**
+ * The class FolkeSkolePackagerV2 is home to the writeItemAsSAF method, which "translates" a line from the
+ * "skolelove.csv" file detailing metadata from https://library.au.dk/materialer/saersamlinger/skolelove/ and
+ * the corresponding pdf file into the DSpace Simple Archive Format, which can be ingested into a DSpace archive
+ * (https://wiki.duraspace.org/display/DSDOC6x/Importing+and+Exporting+Items+via+Simple+Archive+Format).
+ */
+public class FolkeSkolePackagerV2 {
 
     private static Logger log = LoggerFactory.getLogger(dk.statsbiblioteket.mediestream.loar.folkeskole.FolkeskoleSimplePackager.class);
     private static final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -57,44 +66,51 @@ public class FolkeskoleSimplePackager {
         dcroot.setAttribute("schema", "dc");
         dcdoc.appendChild(dcroot);
 
-        //name (kolonne 0) -> title
-        addElement("title", null, item[0], dcdoc, dcroot);
-        //date (kolonne 1) -> issued date
-        String date = item[1];
+        //uid (kolonne 0) -> identifier
+        //todo
+
+        //titel (kolonne 1) -> title
+        addElement("title", null, item[1], dcdoc, dcroot);
+
+        //lawtype (kolonne 2) -> ??
+        //todo
+        //year (kolonne 3)
+        // date (kolonne 4) -> issued date
+        String date = item[4];
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         if (!date.equals("")) {
-        if (date.matches("\\d{4}") || date.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            addElement("date", "issued", date, dcdoc, dcroot);
-        } else {
-            LocalDate parsedDate = LocalDate.parse(item[1], formatter);
-            formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            addElement("date", "issued", parsedDate.format(formatter), dcdoc, dcroot);
-        }}
-        //write the pdf files from the external_resource fields in this item directory
-        //and in the contents file and add to dublin core document
-        if (item.length>2) {
-            String pdfUrl = item[2];
-            if (pdfUrl != null || !pdfUrl.equals("")) {
-                URL url = new URL(pdfUrl);
-                URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
-                url = uri.toURL();
+            if (date.matches("\\d{4}") || date.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                addElement("date", "issued", date, dcdoc, dcroot);
+            } else {
+                LocalDate parsedDate = LocalDate.parse(item[4], formatter);
+                formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                addElement("date", "issued", parsedDate.format(formatter), dcdoc, dcroot);
+            }
+        }
+        //regulation_no (kolonne 5) -> ?? det er vel en slags identifier
+        if (item.length>5 && !item[5].equals("")) {
+            addElement("identifier", "other", item[5], dcdoc, dcroot);
+        }
+        //educationtype (kolonne 6) -> ?? det må være en type
+        if (item.length>6 && !item[6].equals("")) {
+            addElement("type", null, item[6], dcdoc, dcroot);
+        }
 
+        //write the pdf files from the "pdf_version" (kolonne 7) fields in this item directory
+        //and in the contents file
+        //and add to dublin core document preceded by "https://library.au.dk/uploads/tx_lfskolelov/"
+        if (item.length>7) {
+            String pdfName = item[7];
+            if (pdfName != null || !pdfName.equals("")) {
+                String pdfUrl = "https://library.au.dk/uploads/tx_lfskolelov/" + pdfName;
+
+                Path pdfFileSource = new File("/home/baj/Projects/meloar-transform/folkeskole/data/skolelove/pdf", pdfName).toPath();
+                Path pdfFileDest = new File(item_directory, pdfName).toPath();
                 try {
-                    url.openStream();
-                } catch (FileNotFoundException e) {
-                    log.error("pdf does not exist: " + pdfUrl, e);
+                    Files.copy(pdfFileSource, pdfFileDest, REPLACE_EXISTING);
+                } catch (IOException e) {
                     e.printStackTrace();
-                    item_directory.delete();
                 }
-
-                String[] splitPdfUrl = pdfUrl.split("/");
-                String pdfName = splitPdfUrl[splitPdfUrl.length - 1];
-
-                ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-                File pdfFile = new File(item_directory, pdfName);
-                FileOutputStream fileOutputStream = new FileOutputStream(pdfFile);
-                fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-
                 //write the file name to the contents file
                 contentsFileWriter.write(pdfName);
 
@@ -102,21 +118,27 @@ public class FolkeskoleSimplePackager {
                 addElement("relation", "uri", pdfUrl, dcdoc, dcroot);
             }
         }
-        if (item.length > 3) {
-            //note (kolonne 3) -> alternative title
-            addElement("title", "alternative", item[3], dcdoc, dcroot);
+
+        //internt link (kolonne 8) -> virker ikke (nyt bibliotekssystem), så den springer vi over
+        //eksternt link (kolonne 9) -> ser ud til at de virker -> related
+        if (item.length>9 && !item[9].equals("")) {
+            addElement("relation", "references", item[9], dcdoc, dcroot);
         }
-        if (item.length > 4) {
-            //content (kolonne 4) -> description
-            addElement("description", null, item[4], dcdoc, dcroot);
+
+        //content (kolonne 10) giver ikke rigtig mening ud af kontekst
+        //note (kolonne 11) -> giver nogen gange mening...
+        if (item.length > 11 && !item[11].equals("")) {
+            addElement("description", "notes", item[11], dcdoc, dcroot);
         }
+        //resten af kolonnerne giver heller ikke mening uden for kontekst
+        //vi mangler desciption
+        //    addElement("description", null, item[4], dcdoc, dcroot);
         //publisher er ikke "Royal Danish Library", men nok nærmere "Aarhus University Library", men det er
         //måske det samme?
         addElement("publisher", null, "Aarhus University Library", dcdoc, dcroot);
         //vi mangler en forfatter
         //addElement("contributor", "author", item, dcdoc, dcroot);
 
-        //type springer vi over
         //keywords
         addElement("subject", null, "folkeskole", dcdoc, dcroot);
 

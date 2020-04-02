@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 
-import static dk.statsbiblioteket.mediestream.loar.folkeskole.FolkeskoleSimplePackager.writeItemAsSAF;
+import static dk.statsbiblioteket.mediestream.loar.folkeskole.FolkeSkolePackagerV2.writeItemAsSAF;
+
+//import static dk.statsbiblioteket.mediestream.loar.folkeskole.FolkeskoleSimplePackager.writeItemAsSAF;
 
 public class FolkeskoleCSVmetadataReader {
     public static final String outputdirectory = "/home/baj/Projects/meloar-transform/folkeskole/data/output";
