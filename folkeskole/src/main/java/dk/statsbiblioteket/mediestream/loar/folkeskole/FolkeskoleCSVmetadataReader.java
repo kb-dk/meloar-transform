@@ -1,10 +1,13 @@
 package dk.statsbiblioteket.mediestream.loar.folkeskole;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.ParseException;
@@ -27,15 +30,23 @@ public class FolkeskoleCSVmetadataReader {
 
 
         CSVReader reader = null;
+        CSVWriter writer = null;
         try {
             reader = new CSVReader(new FileReader(csvFile), ',');
+            writer = new CSVWriter(new FileWriter(new File(outputdirectory, "kom_ikke_med.csv")), ',');
             String[] line;
             reader.readNext();//overskrifter
             while ((line = reader.readNext()) != null) {
-                if (!line[0].isEmpty() )
-                    writeItemAsSAF(line, outputdirectory);
-
+                if (!line[0].isEmpty() ) {
+                    boolean success = writeItemAsSAF(line, outputdirectory);
+                    if (!success) {
+                        //write the lines that were not transformed to a LOAR item
+                        writer.writeNext(line);
+                    }
+                }
             }
+            writer.flush();
+            writer.close();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ParseException e) {

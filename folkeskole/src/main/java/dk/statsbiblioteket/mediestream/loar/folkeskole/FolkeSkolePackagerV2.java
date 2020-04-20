@@ -22,6 +22,8 @@ import java.nio.file.Path;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -31,136 +33,179 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
  * "skolelove.csv" file detailing metadata from https://library.au.dk/materialer/saersamlinger/skolelove/ and
  * the corresponding pdf file into the DSpace Simple Archive Format, which can be ingested into a DSpace archive
  * (https://wiki.duraspace.org/display/DSDOC6x/Importing+and+Exporting+Items+via+Simple+Archive+Format).
+ *
+ * todo Det giver nok kun mening at ingeste de skole-love, som har enten pdf eller text eller eksternt link (eller flere af dem).
+ * todo Er eksternt link nok (reference til retsinformation)?
  */
 public class FolkeSkolePackagerV2 {
 
     private static Logger log = LoggerFactory.getLogger(dk.statsbiblioteket.mediestream.loar.folkeskole.FolkeskoleSimplePackager.class);
     private static final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     private static int count = 0;
+    private static int count_text = 0;
 
     /**
      * Write a LOAR DSpace Simple Archive Format structure based on the given line.
      * @param item String array with metadata for 1 item
      * @param outputdirectory String directory name where to put structure
      */
-    public static void writeItemAsSAF(String[] item, String outputdirectory)
+    public static boolean writeItemAsSAF(String[] item, String outputdirectory)
             throws ParserConfigurationException, IOException, TransformerException, ParseException, URISyntaxException {
 
-        System.out.println(count);
-        //First we need a directory for this item
-        File item_directory = new File(outputdirectory, "item"+count);
-        item_directory.mkdir();
-        count++;
+        if (item.length>7 && item[7] != null && !item[7].equals("")  //pdf exists
+                || new File("/home/baj/Projects/meloar-transform/folkeskole/data/folkeskole_" +
+                "description_20200416/folkeskole/description/"+item[0]+".txt").exists()  //text exists
+                || item.length>9 && !item[9].equals("")) {  //reference exists
+            //System.out.println(count);
 
-        //The contents file simply enumerates, one file per line, the bitstream file names
-        //The bitstream name may optionally be followed by \tpermissions:PERMISSIONS
-        File contents = new File(item_directory, "contents");
-        contents.createNewFile();
-        FileWriter contentsFileWriter = new FileWriter(contents);
+            //First we need a directory for this item
+            File item_directory = new File(outputdirectory, "item" + count);
+            item_directory.mkdir();
+            count++;
 
-        //The dublin_core.xml file contains some of the metadata as dublin core
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document dcdoc = builder.newDocument();
-        Element dcroot = dcdoc.createElement("dublin_core");
-        dcroot.setAttribute("schema", "dc");
-        dcdoc.appendChild(dcroot);
+            //The contents file simply enumerates, one file per line, the bitstream file names
+            //The bitstream name may optionally be followed by \tpermissions:PERMISSIONS
+            File contents = new File(item_directory, "contents");
+            contents.createNewFile();
+            FileWriter contentsFileWriter = new FileWriter(contents);
 
-        //uid (kolonne 0) -> identifier
-        //todo
+            //The dublin_core.xml file contains some of the metadata as dublin core
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document dcdoc = builder.newDocument();
+            Element dcroot = dcdoc.createElement("dublin_core");
+            dcroot.setAttribute("schema", "dc");
+            dcdoc.appendChild(dcroot);
 
-        //titel (kolonne 1) -> title
-        addElement("title", null, item[1], dcdoc, dcroot);
 
-        //lawtype (kolonne 2) -> ??
-        //todo
-        //year (kolonne 3)
-        // date (kolonne 4) -> issued date
-        String date = item[4];
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        if (!date.equals("")) {
-            if (date.matches("\\d{4}") || date.matches("\\d{4}-\\d{2}-\\d{2}")) {
-                addElement("date", "issued", date, dcdoc, dcroot);
-            } else {
-                LocalDate parsedDate = LocalDate.parse(item[4], formatter);
-                formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                addElement("date", "issued", parsedDate.format(formatter), dcdoc, dcroot);
-            }
-        }
-        //regulation_no (kolonne 5) -> ?? det er vel en slags identifier
-        if (item.length>5 && !item[5].equals("")) {
-            addElement("identifier", "other", item[5], dcdoc, dcroot);
-        }
-        //educationtype (kolonne 6) -> ?? det må være en type
-        if (item.length>6 && !item[6].equals("")) {
-            addElement("type", null, item[6], dcdoc, dcroot);
-        }
-
-        //write the pdf files from the "pdf_version" (kolonne 7) fields in this item directory
-        //and in the contents file
-        //and add to dublin core document preceded by "https://library.au.dk/uploads/tx_lfskolelov/"
-        if (item.length>7) {
-            String pdfName = item[7];
-            if (pdfName != null || !pdfName.equals("")) {
-                String pdfUrl = "https://library.au.dk/uploads/tx_lfskolelov/" + pdfName;
-
-                Path pdfFileSource = new File("/home/baj/Projects/meloar-transform/folkeskole/data/skolelove/pdf", pdfName).toPath();
-                Path pdfFileDest = new File(item_directory, pdfName).toPath();
-                try {
-                    Files.copy(pdfFileSource, pdfFileDest, REPLACE_EXISTING);
+            //uid (kolonne 0) -> identifier
+            addElement("identifier", "other", "uid: " + item[0], dcdoc, dcroot);
+            //use the uid to find the text
+            String textFileName = item[0] + ".txt";
+            File text = new File("/home/baj/Projects/meloar-transform/folkeskole/data/folkeskole_" +
+                    "description_20200416/folkeskole/description/" + textFileName);
+            if (text.exists()) {
+                count_text++;
+                //System.out.println("count_text=" + count_text);
+                //copy the text file
+                Path destination = new File(item_directory, textFileName).toPath();
+                Files.copy(text.toPath(), destination, REPLACE_EXISTING);
+                //add to contents
+                contentsFileWriter.write(textFileName + "\n");
+                //use the first three lines in the dc description
+                try (Stream<String> stream = Files.lines(text.toPath())) {
+                    String description = Files.lines(text.toPath()).findFirst().get();
+                    System.out.println(description);
+                    description += Files.lines(text.toPath()).skip(0).findFirst().get();
+                    description += Files.lines(text.toPath()).skip(1).findFirst().get();
+                    description += Files.lines(text.toPath()).skip(2).findFirst().get();
+                    description += Files.lines(text.toPath()).skip(3).findFirst().get();
+                    description += "... Læs videre i " + textFileName;
+                    addElement("description", "abstract", description, dcdoc, dcroot);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                //write the file name to the contents file
-                contentsFileWriter.write(pdfName);
-
-                //write the url to the dublin core file
-                addElement("relation", "uri", pdfUrl, dcdoc, dcroot);
             }
+            //titel (kolonne 1) -> title
+            addElement("title", null, item[1], dcdoc, dcroot);
+
+            //lawtype (kolonne 2) -> ??
+            //todo
+            //year (kolonne 3)
+            // date (kolonne 4) -> issued date
+            String date = item[4];
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            if (!date.equals("")) {
+                if (date.matches("\\d{4}") || date.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                    addElement("date", "issued", date, dcdoc, dcroot);
+                } else {
+                    LocalDate parsedDate = LocalDate.parse(item[4], formatter);
+                    formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    addElement("date", "issued", parsedDate.format(formatter), dcdoc, dcroot);
+                }
+            }
+            //regulation_no (kolonne 5) -> ?? det er vel en slags identifier
+            if (item.length > 5 && !item[5].equals("")) {
+                addElement("identifier", "other", "regulation_no: " + item[5], dcdoc, dcroot);
+            }
+            //educationtype (kolonne 6) -> ?? det må være en type
+            if (item.length > 6 && !item[6].equals("")) {
+                addElement("type", null, item[6], dcdoc, dcroot);
+            }
+
+            //write the pdf files from the "pdf_version" (kolonne 7) fields in this item directory
+            //and in the contents file
+            //and add to dublin core document preceded by "https://library.au.dk/uploads/tx_lfskolelov/"
+            if (item.length > 7) {
+                String pdfName = item[7];
+                if (pdfName != null && !pdfName.equals("")) {
+
+                    String pdfUrl = "https://library.au.dk/uploads/tx_lfskolelov/" + pdfName;
+
+                    Path pdfFileSource = new File("/home/baj/Projects/meloar-transform/folkeskole/data/skolelove/pdf", pdfName).toPath();
+                    Path pdfFileDest = new File(item_directory, pdfName).toPath();
+                    try {
+                        Files.copy(pdfFileSource, pdfFileDest, REPLACE_EXISTING);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    //write the file name to the contents file
+                    contentsFileWriter.write(pdfName);
+
+                    //write the url to the dublin core file
+                    //addElement("relation", "uri", pdfUrl, dcdoc, dcroot);
+                    //not necessary
+                }
+            }
+            //internt link (kolonne 8) -> virker ikke (nyt bibliotekssystem), så den springer vi over
+            //eksternt link (kolonne 9) -> ser ud til at de virker -> related
+            if (item.length > 9 && !item[9].equals("")) {
+                addElement("relation", "uri", item[9], dcdoc, dcroot);
+            }
+
+            //content (kolonne 10) giver ikke rigtig mening ud af kontekst
+            //note (kolonne 11) -> giver nogen gange mening...
+            if (item.length > 11 && !item[11].equals("")) {
+                addElement("description", null, item[11], dcdoc, dcroot);
+            }
+            //resten af kolonnerne giver heller ikke mening uden for kontekst
+            //vi mangler description
+            //    addElement("description", null, item[4], dcdoc, dcroot);
+            //publisher er ikke "Royal Danish Library", men nok nærmere "Aarhus University Library", men det er
+            //måske det samme?
+            addElement("publisher", null, "Aarhus University Library", dcdoc, dcroot);
+            //vi mangler en forfatter
+            //addElement("contributor", "author", item, dcdoc, dcroot);
+
+            //keywords
+            addElement("subject", null, "skolelove", dcdoc, dcroot);
+
+            // write the content into xml file
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(dcdoc);
+            StreamResult streamResult = new StreamResult(new File(item_directory, "dublin_core.xml"));
+            transformer.transform(source, streamResult);
+
+            // Output to console for testing
+            //StreamResult consoleResult = new StreamResult(System.out);
+            //transformer.transform(source, consoleResult);
+            //System.out.println("\n");
+
+            //XMLUtil.write(doc, System.out, "UTF8");
+            //System.out.println(doc.toString());
+
+            //remember to write the contents file
+            contentsFileWriter.flush();
+            contentsFileWriter.close();
+            return true;
         }
-
-        //internt link (kolonne 8) -> virker ikke (nyt bibliotekssystem), så den springer vi over
-        //eksternt link (kolonne 9) -> ser ud til at de virker -> related
-        if (item.length>9 && !item[9].equals("")) {
-            addElement("relation", "references", item[9], dcdoc, dcroot);
+        else {
+            //det er dem her der ikke er kommet med
+            System.out.println(count);
+            System.out.println(Arrays.deepToString(item));
+            return false;
         }
-
-        //content (kolonne 10) giver ikke rigtig mening ud af kontekst
-        //note (kolonne 11) -> giver nogen gange mening...
-        if (item.length > 11 && !item[11].equals("")) {
-            addElement("description", "notes", item[11], dcdoc, dcroot);
-        }
-        //resten af kolonnerne giver heller ikke mening uden for kontekst
-        //vi mangler desciption
-        //    addElement("description", null, item[4], dcdoc, dcroot);
-        //publisher er ikke "Royal Danish Library", men nok nærmere "Aarhus University Library", men det er
-        //måske det samme?
-        addElement("publisher", null, "Aarhus University Library", dcdoc, dcroot);
-        //vi mangler en forfatter
-        //addElement("contributor", "author", item, dcdoc, dcroot);
-
-        //keywords
-        addElement("subject", null, "folkeskole", dcdoc, dcroot);
-
-        // write the content into xml file
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        DOMSource source = new DOMSource(dcdoc);
-        StreamResult streamResult = new StreamResult(new File(item_directory,"dublin_core.xml"));
-        transformer.transform(source, streamResult);
-
-        // Output to console for testing
-        //StreamResult consoleResult = new StreamResult(System.out);
-        //transformer.transform(source, consoleResult);
-        //System.out.println("\n");
-
-        //XMLUtil.write(doc, System.out, "UTF8");
-        //System.out.println(doc.toString());
-
-        //remember to write the contents file
-        contentsFileWriter.flush();
-        contentsFileWriter.close();
-
     }
 
     /**
