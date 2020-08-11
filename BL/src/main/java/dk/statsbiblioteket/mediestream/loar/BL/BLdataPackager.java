@@ -1,9 +1,10 @@
-package dk.statsbiblioteket.mediestream.loar.folkeskole;
+package dk.statsbiblioteket.mediestream.loar.BL;
 
+import com.opencsv.CSVReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -14,6 +15,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -23,38 +25,102 @@ import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-
 /**
- * The class FolkeSkolePackagerV2 is home to the writeItemAsSAF method, which "translates" a line from the
- * "skolelove.csv" file detailing metadata from https://library.au.dk/materialer/saersamlinger/skolelove/ and
- * the corresponding pdf file into the DSpace Simple Archive Format, which can be ingested into a DSpace archive
+ * The class BLdataPackager is home to the writeItemAsSAF method, which "translates" a line from the
+ * "BL/data/Microsoft Books records 2019-09-19.xlsx" file detailing metadata from the BL Microsoft Digitised Books
+ * project along with the corresponding data files into the DSpace Simple Archive Format, which can be ingested into a
+ * DSpace archive
  * (https://wiki.duraspace.org/display/DSDOC6x/Importing+and+Exporting+Items+via+Simple+Archive+Format).
- *
- * Det giver kun mening at ingeste de skole-love, som har enten pdf eller text eller eksternt link (eller flere af dem).
  */
-public class FolkeSkolePackagerV2 {
+public class BLdataPackager {
 
-    private static Logger log = LoggerFactory.getLogger(dk.statsbiblioteket.mediestream.loar.folkeskole.FolkeSkolePackagerV2.class);
+    private static Logger log = LoggerFactory.getLogger(dk.statsbiblioteket.mediestream.loar.BL.BLdataPackager.class);
     private static final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     private static int count = 0;
     private static int count_text = 0;
+
+    public static boolean matchDataToCSV(String dataDirectory, String csvFile, String outputdirectory) {
+        //Read CSVfile into java
+        CSVReader reader = null;
+        List<String[]> csv = null;
+        try {
+            reader = new CSVReader(new FileReader(csvFile), ',');
+            csv = reader.readAll();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String[] head = csv.get(0);
+        int shelfmarkIndex = -1;
+        for (int index = 0; index < head.length; index++) {
+            if (head[index].trim().equals("BL shelfmark")) {
+                shelfmarkIndex = index;
+                break;
+            }
+        }
+        if (shelfmarkIndex==-1) {
+            return false;
+        }
+
+        //Read all xml files in data directory; find their BL Shelfmark; use this to find the corresponding item
+        //in the csv file; then write the item as SAF
+        File inputdir = new File(dataDirectory);
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        if (inputdir.isDirectory()) {
+            File[] files = inputdir.listFiles();
+            assert files != null;
+            for (File file: files) {
+                if (file.getName().endsWith(".xml")) {
+                    try {
+                        DocumentBuilder builder = factory.newDocumentBuilder();
+                        Document inputdoc = builder.parse(file);
+                        // find <MARC:subfield code="j">
+                        NodeList marcSubfields = inputdoc.getElementsByTagNameNS("MARC", "subfield");
+                        Node field;
+                        for (int i = 0; i < marcSubfields.getLength(); i++) {
+                            field = marcSubfields.item(i);
+                            NamedNodeMap atts = field.getAttributes();
+                            Node code = atts.getNamedItem("code");
+                            if (code!=null && code.getTextContent().equals("j")) {
+                                String blShelfmark = field.getTextContent().trim();
+                                //now find the BL Shelfmark in the CSV file
+                                for (String[] line: csv) {
+                                    if (line[shelfmarkIndex].contains(blShelfmark)) {
+                                        writeItemAsSAF(line, dataDirectory, file.getName(), outputdirectory);
+                                    }
+                                }
+                            }
+                        }
+
+                    } catch (ParserConfigurationException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (SAXException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+
 
     /**
      * Write a LOAR DSpace Simple Archive Format structure based on the given line.
      * @param item String array with metadata for 1 item
      * @param outputdirectory String directory name where to put structure
      */
-    public static boolean writeItemAsSAF(String[] item, String outputdirectory)
+    public static boolean writeItemAsSAF(String[] item, String dataDirectory, String xmlFileName, String outputdirectory)
             throws ParserConfigurationException, IOException, TransformerException, ParseException, URISyntaxException {
 
-        if (item.length>7 && item[7] != null && !item[7].equals("")  //pdf exists
-                || new File("/home/baj/Projects/meloar-transform/folkeskole/data/folkeskole_" +
-                "description_20200416/folkeskole/description/"+item[0]+".txt").exists()  //text exists
-                || item.length>9 && !item[9].equals("")) {  //reference exists
+        if (true) {
             //System.out.println(count);
 
             //First we need a directory for this item
@@ -68,6 +134,26 @@ public class FolkeSkolePackagerV2 {
             contents.createNewFile();
             FileWriter contentsFileWriter = new FileWriter(contents);
 
+            //We copy the data to this directory and update the contents file
+            //todo right now it's just the xml file along with the zip files - is that what we want?
+            String fileNameID = xmlFileName.substring(0, 9);
+            File[] files = new File(dataDirectory).listFiles();
+            for (int i = 0; i < files.length; i++) {
+                File file = files[i];
+                String fileName = file.getName();
+                if (fileName.startsWith(fileNameID) && (fileName.endsWith(".xml") || fileName.endsWith(".zip"))) {
+                    Path fileSource = file.toPath();
+                    Path fileDest = new File(item_directory, fileName).toPath();
+                    try {
+                        Files.copy(fileSource, fileDest, REPLACE_EXISTING);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    //write the file name to the contents file
+                    contentsFileWriter.write(fileName);
+                }
+            }
+
             //The dublin_core.xml file contains some of the metadata as dublin core
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -76,38 +162,35 @@ public class FolkeSkolePackagerV2 {
             dcroot.setAttribute("schema", "dc");
             dcdoc.appendChild(dcroot);
 
+            //BL record ID (kolonne 0) -> identifier
+            //may not be relevant
+            addElement("identifier", "other", "BL record ID: " + item[0], dcdoc, dcroot);
 
-            //uid (kolonne 0) -> identifier
-            addElement("identifier", "other", "uid: " + item[0], dcdoc, dcroot);
-            //use the uid to find the text
-            String textFileName = item[0] + ".txt";
-            File text = new File("/home/baj/Projects/meloar-transform/folkeskole/data/folkeskole_" +
-                    "description_20200416/folkeskole/description/" + textFileName);
-            if (text.exists()) {
-                count_text++;
-                //System.out.println("count_text=" + count_text);
-                //copy the text file
-                Path destination = new File(item_directory, textFileName).toPath();
-                Files.copy(text.toPath(), destination, REPLACE_EXISTING);
-                //add to contents
-                contentsFileWriter.write(textFileName + "\n");
-                //use the first three lines in the dc description
-                try (Stream<String> stream = Files.lines(text.toPath())) {
-                    String description = Files.lines(text.toPath()).findFirst().get();
-                    System.out.println(description);
-                    description += Files.lines(text.toPath()).skip(0).findFirst().get();
-                    description += Files.lines(text.toPath()).skip(1).findFirst().get();
-                    description += Files.lines(text.toPath()).skip(2).findFirst().get();
-                    description += Files.lines(text.toPath()).skip(3).findFirst().get();
-                    description += "... Læs videre i " + textFileName;
-                    addElement("description", "abstract", description, dcdoc, dcroot);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            //titel (kolonne 1) -> title
-            addElement("title", null, item[1], dcdoc, dcroot);
+            //ARK (kolonne 1) -> identifier
+            addElement("identifier", "other", item[1], dcdoc, dcroot);
 
+            //URL (kolonne 2) -> relation:uri
+            addElement("relation", "uri", item[2], dcdoc, dcroot);
+
+            //Type of resource (kolonne 3) -> type
+            addElement("type", null, item[3], dcdoc, dcroot);
+
+            //Content type (kolonne 4) -> type
+            addElement("type", null, item[4], dcdoc, dcroot);
+
+            //Material type (kolonne 5) -> type
+            addElement("type", null, item[5], dcdoc, dcroot);
+
+            //Name (kolonne 8) -> author
+            addElement("contributor", "author", item[8],dcdoc, dcroot);
+
+            //All names (kolonne 12) -> contributors
+            //Den kræver lige noget parsing...
+
+            //Title (kolonne 13) -> title
+            addElement("title", null, item[13], dcdoc, dcroot);
+
+            
             //lawtype (kolonne 2) -> ??
             //todo
             //year (kolonne 3)
@@ -224,7 +307,4 @@ public class FolkeSkolePackagerV2 {
         dcvalue.setAttribute("language", "da_DK");//no qualifier
         dcvalue.setTextContent(textContent);
         root.appendChild(dcvalue);
-    }
-
-
 }

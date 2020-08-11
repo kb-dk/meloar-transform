@@ -18,6 +18,7 @@
         <module>fof</module>
         <module>folkeskole</module>
         <module>kirker</module>
+        <module>daner</module>
         <!--<module>virk</module>-->
     </modules>
 
