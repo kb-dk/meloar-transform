@@ -3,7 +3,10 @@ package dk.statsbiblioteket.mediestream.loar.BL;
 import com.opencsv.CSVReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -22,11 +25,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -54,6 +53,7 @@ public class BLdataPackager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        log.debug("CSV read.");
         String[] head = csv.get(0);
         int shelfmarkIndex = -1;
         for (int index = 0; index < head.length; index++) {
@@ -62,6 +62,7 @@ public class BLdataPackager {
                 break;
             }
         }
+        log.debug("shelfmarkIndex = "+shelfmarkIndex);
         if (shelfmarkIndex==-1) {
             return false;
         }
@@ -75,32 +76,64 @@ public class BLdataPackager {
             assert files != null;
             for (File file: files) {
                 if (file.getName().endsWith(".xml")) {
+                    log.debug("file.getName() = "+file.getName());
                     try {
                         DocumentBuilder builder = factory.newDocumentBuilder();
                         Document inputdoc = builder.parse(file);
-                        // find <MARC:subfield code="j">
-                        NodeList marcSubfields = inputdoc.getElementsByTagNameNS("MARC", "subfield");
-                        Node field;
+                        Element root = inputdoc.getDocumentElement();
+                        NodeList marcSubfields =root.getElementsByTagName("MARC:subfield");
+                        log.debug("marcSubfields.getLength() = "+marcSubfields.getLength());
+                        String blShelfmark = null;
                         for (int i = 0; i < marcSubfields.getLength(); i++) {
-                            field = marcSubfields.item(i);
-                            NamedNodeMap atts = field.getAttributes();
-                            Node code = atts.getNamedItem("code");
-                            if (code!=null && code.getTextContent().equals("j")) {
-                                String blShelfmark = field.getTextContent().trim();
-                                //now find the BL Shelfmark in the CSV file
-                                for (String[] line: csv) {
-                                    if (line[shelfmarkIndex].contains(blShelfmark)) {
-                                        writeItemAsSAF(line, dataDirectory, file.getName(), outputdirectory);
+                            Node node = marcSubfields.item(i);
+                            if (node.getAttributes().getNamedItem("code").getNodeValue().equals("j")) {
+                                blShelfmark = node.getTextContent().trim();
+                                log.debug("blShelfmark = "+blShelfmark);
+                            }
+                        }
+                        if (blShelfmark.endsWith(".")) {
+                            blShelfmark = blShelfmark.substring(0, blShelfmark.length()-1);
+                        }
+                        if (blShelfmark.contains("(")) {
+                            int index = blShelfmark.indexOf("(");
+                            blShelfmark = blShelfmark.substring(0, index) + " " + blShelfmark.substring(index);
+                        }
+                        //now find the BL Shelfmark in the CSV file
+                        for (String[] line: csv) {
+                            //log.debug(line[shelfmarkIndex]);
+                            String csvBlShelfmark = line[shelfmarkIndex];
+                            String[] csvBlShelfmarkArray = null;
+                            if (csvBlShelfmark.contains(";")) {
+                                csvBlShelfmarkArray = csvBlShelfmark.split(";");
+                            } else {
+                                csvBlShelfmarkArray = new String[]{csvBlShelfmark};
+                            }
+                            if (csvBlShelfmarkArray!=null) {
+                                for (int i = 0; i < csvBlShelfmarkArray.length; i++) {
+                                    String csvBlSh = csvBlShelfmarkArray[i];
+                                    if (csvBlSh.contains("Digital Store ")) {
+                                        csvBlSh = csvBlSh.trim().substring("Digital Store ".length());
+                                        if (csvBlSh.equals(blShelfmark)) {
+                                            writeItemAsSAF(line, dataDirectory, file.getName(), outputdirectory);
+                                        }
                                     }
                                 }
                             }
+                            if (csvBlShelfmark.equals(blShelfmark)) {
+                                writeItemAsSAF(line, dataDirectory, file.getName(), outputdirectory);
+                            }
                         }
-
                     } catch (ParserConfigurationException e) {
                         e.printStackTrace();
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (SAXException e) {
+                        e.printStackTrace();
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    } catch (TransformerException e) {
+                        e.printStackTrace();
+                    } catch (URISyntaxException e) {
                         e.printStackTrace();
                     }
                 }
@@ -120,174 +153,194 @@ public class BLdataPackager {
     public static boolean writeItemAsSAF(String[] item, String dataDirectory, String xmlFileName, String outputdirectory)
             throws ParserConfigurationException, IOException, TransformerException, ParseException, URISyntaxException {
 
-        if (true) {
-            //System.out.println(count);
+        log.debug("Entering writeItemAsSAF with xmlFileName = "+xmlFileName);
+        //First we need a directory for this item
+        File item_directory = new File(outputdirectory, "item" + count);
+        item_directory.mkdir();
+        count++;
+        log.debug("count = "+count);
+        //The contents file simply enumerates, one file per line, the bitstream file names
+        //The bitstream name may optionally be followed by \tpermissions:PERMISSIONS
+        File contents = new File(item_directory, "contents");
+        contents.createNewFile();
+        FileWriter contentsFileWriter = new FileWriter(contents);
 
-            //First we need a directory for this item
-            File item_directory = new File(outputdirectory, "item" + count);
-            item_directory.mkdir();
-            count++;
-
-            //The contents file simply enumerates, one file per line, the bitstream file names
-            //The bitstream name may optionally be followed by \tpermissions:PERMISSIONS
-            File contents = new File(item_directory, "contents");
-            contents.createNewFile();
-            FileWriter contentsFileWriter = new FileWriter(contents);
-
-            //We copy the data to this directory and update the contents file
-            //todo right now it's just the xml file along with the zip files - is that what we want?
-            String fileNameID = xmlFileName.substring(0, 9);
-            File[] files = new File(dataDirectory).listFiles();
-            for (int i = 0; i < files.length; i++) {
-                File file = files[i];
-                String fileName = file.getName();
-                if (fileName.startsWith(fileNameID) && (fileName.endsWith(".xml") || fileName.endsWith(".zip"))) {
-                    Path fileSource = file.toPath();
-                    Path fileDest = new File(item_directory, fileName).toPath();
-                    try {
-                        Files.copy(fileSource, fileDest, REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    //write the file name to the contents file
-                    contentsFileWriter.write(fileName);
+        //We copy the data to this directory and update the contents file
+        //todo right now it's just the xml file along with the zip files - is that what we want?
+        String fileNameID = xmlFileName.substring(0, 11);
+        File[] files = new File(dataDirectory).listFiles();
+        for (int i = 0; i < files.length; i++) {
+            File file = files[i];
+            String fileName = file.getName();
+            if (fileName.startsWith(fileNameID) && (fileName.endsWith(".xml") || fileName.endsWith(".zip"))) {
+                Path fileSource = file.toPath();
+                Path fileDest = new File(item_directory, fileName).toPath();
+                try {
+                    Files.copy(fileSource, fileDest, REPLACE_EXISTING);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
+                //write the file name to the contents file
+                contentsFileWriter.write(fileName+"\n");
+                log.debug("fileName = "+fileName);
             }
-
-            //The dublin_core.xml file contains some of the metadata as dublin core
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document dcdoc = builder.newDocument();
-            Element dcroot = dcdoc.createElement("dublin_core");
-            dcroot.setAttribute("schema", "dc");
-            dcdoc.appendChild(dcroot);
-
-            //BL record ID (kolonne 0) -> identifier
-            //may not be relevant
-            addElement("identifier", "other", "BL record ID: " + item[0], dcdoc, dcroot);
-
-            //ARK (kolonne 1) -> identifier
-            addElement("identifier", "other", item[1], dcdoc, dcroot);
-
-            //URL (kolonne 2) -> relation:uri
-            addElement("relation", "uri", item[2], dcdoc, dcroot);
-
-            //Type of resource (kolonne 3) -> type
-            addElement("type", null, item[3], dcdoc, dcroot);
-
-            //Content type (kolonne 4) -> type
-            addElement("type", null, item[4], dcdoc, dcroot);
-
-            //Material type (kolonne 5) -> type
-            addElement("type", null, item[5], dcdoc, dcroot);
-
-            //Name (kolonne 8) -> author
-            addElement("contributor", "author", item[8],dcdoc, dcroot);
-
-            //All names (kolonne 12) -> contributors
-            //Den kræver lige noget parsing...
-
-            //Title (kolonne 13) -> title
-            addElement("title", null, item[13], dcdoc, dcroot);
-
-            
-            //lawtype (kolonne 2) -> ??
-            //todo
-            //year (kolonne 3)
-            // date (kolonne 4) -> issued date
-            String date = item[4];
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-            if (!date.equals("")) {
-                if (date.matches("\\d{4}") || date.matches("\\d{4}-\\d{2}-\\d{2}")) {
-                    addElement("date", "issued", date, dcdoc, dcroot);
-                } else {
-                    LocalDate parsedDate = LocalDate.parse(item[4], formatter);
-                    formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                    addElement("date", "issued", parsedDate.format(formatter), dcdoc, dcroot);
-                }
-            }
-            //regulation_no (kolonne 5) -> ?? det er vel en slags identifier
-            if (item.length > 5 && !item[5].equals("")) {
-                addElement("identifier", "other", "regulation_no: " + item[5], dcdoc, dcroot);
-            }
-            //educationtype (kolonne 6) -> ?? det må være en type
-            if (item.length > 6 && !item[6].equals("")) {
-                addElement("type", null, item[6], dcdoc, dcroot);
-            }
-
-            //write the pdf files from the "pdf_version" (kolonne 7) fields in this item directory
-            //and in the contents file
-            //and add to dublin core document preceded by "https://library.au.dk/uploads/tx_lfskolelov/"
-            if (item.length > 7) {
-                String pdfName = item[7];
-                if (pdfName != null && !pdfName.equals("")) {
-
-                    String pdfUrl = "https://library.au.dk/uploads/tx_lfskolelov/" + pdfName;
-
-                    Path pdfFileSource = new File("/home/baj/Projects/meloar-transform/folkeskole/data/skolelove/pdf", pdfName).toPath();
-                    Path pdfFileDest = new File(item_directory, pdfName).toPath();
-                    try {
-                        Files.copy(pdfFileSource, pdfFileDest, REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    //write the file name to the contents file
-                    contentsFileWriter.write(pdfName);
-
-                    //write the url to the dublin core file
-                    //addElement("relation", "uri", pdfUrl, dcdoc, dcroot);
-                    //not necessary
-                }
-            }
-            //internt link (kolonne 8) -> virker ikke (nyt bibliotekssystem), så den springer vi over
-            //eksternt link (kolonne 9) -> ser ud til at de virker -> related
-            if (item.length > 9 && !item[9].equals("")) {
-                addElement("relation", "uri", item[9], dcdoc, dcroot);
-            }
-
-            //content (kolonne 10) giver ikke rigtig mening ud af kontekst
-            //note (kolonne 11) -> giver nogen gange mening...
-            if (item.length > 11 && !item[11].equals("")) {
-                addElement("description", null, item[11], dcdoc, dcroot);
-            }
-            //resten af kolonnerne giver heller ikke mening uden for kontekst
-            //vi mangler description
-            //    addElement("description", null, item[4], dcdoc, dcroot);
-            //publisher er ikke "Royal Danish Library", men nok nærmere "Aarhus University Library", men det er
-            //måske det samme?
-            addElement("publisher", null, "Aarhus University Library", dcdoc, dcroot);
-            //vi mangler en forfatter
-            //addElement("contributor", "author", item, dcdoc, dcroot);
-
-            //keywords
-            addElement("subject", null, "skolelove", dcdoc, dcroot);
-
-            // write the content into xml file
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer = transformerFactory.newTransformer();
-            DOMSource source = new DOMSource(dcdoc);
-            StreamResult streamResult = new StreamResult(new File(item_directory, "dublin_core.xml"));
-            transformer.transform(source, streamResult);
-
-            // Output to console for testing
-            //StreamResult consoleResult = new StreamResult(System.out);
-            //transformer.transform(source, consoleResult);
-            //System.out.println("\n");
-
-            //XMLUtil.write(doc, System.out, "UTF8");
-            //System.out.println(doc.toString());
-
-            //remember to write the contents file
-            contentsFileWriter.flush();
-            contentsFileWriter.close();
-            return true;
         }
-        else {
-            //det er dem her der ikke er kommet med
-            System.out.println(count);
-            System.out.println(Arrays.deepToString(item));
-            return false;
+
+        //The dublin_core.xml file contains some of the metadata as dublin core
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document dcdoc = builder.newDocument();
+        Element dcroot = dcdoc.createElement("dublin_core");
+        dcroot.setAttribute("schema", "dc");
+        dcdoc.appendChild(dcroot);
+
+        //BL record ID (kolonne 0) -> identifier
+        //may not be relevant
+        addElement("identifier", "other", "BL record ID: " + item[0], dcdoc, dcroot);
+
+        //ARK (kolonne 1) -> identifier
+        addElement("identifier", "other", item[1], dcdoc, dcroot);
+
+        //URL (kolonne 2) -> relation:uri
+        addElement("relation", "uri", item[2], dcdoc, dcroot);
+
+        //Type of resource (kolonne 3) -> type
+        addElement("type", null, item[3], dcdoc, dcroot);
+
+        //Content type (kolonne 4) -> type
+        addElement("type", null, item[4], dcdoc, dcroot);
+
+        //Material type (kolonne 5) -> type
+        addElement("type", null, item[5], dcdoc, dcroot);
+
+        //Name (kolonne 8) -> author
+        addElement("contributor", "author", item[8],dcdoc, dcroot);
+
+        //All names (kolonne 12) -> contributors
+        String contributors = item[12];
+        String[] contributorArray = contributors.split(";");
+        for (int index = 0; index < contributorArray.length; index++) {
+            String contributor = contributorArray[index];
+            if (contributor.contains("[")) {
+                contributor = contributor.split("\\[")[0];
+            }
+            if (!contributor.trim().equals(item[8].trim())) {
+                addElement("contributor", null, contributor, dcdoc, dcroot);
+            }
         }
+
+        //Title (kolonne 13) -> title
+        String title = item[13];
+        addElement("title", null, title, dcdoc, dcroot);
+
+        //Uniform Title (kolonne 14) -> title
+        String utitle = item[14];
+        if (utitle!=null && !utitle.equals("") && !utitle.equals(title)) {
+            addElement("title", "alternative", utitle, dcdoc, dcroot);
+        }
+
+        //Variant Titles (kolonne 15) -> title
+        String vtitle = item[15];
+        if (vtitle!=null && !vtitle.equals("") && !vtitle.equals(title) && !vtitle.equals(utitle)) {
+            addElement("title", "alternative", vtitle, dcdoc, dcroot);
+        }
+
+        //Series title (kolonne 16) -> relation.ispartofseries
+        if (!item[16].equals("")) {
+            addElement("relation", "ispartofseries", item[16], dcdoc, dcroot);
+        }
+
+        //todo Number within series (kolonne 17) -> ???
+
+        //Country of publication (kolonne 18) -> coverage.spatial
+        String countries = item[18];
+        String[] countryArray = countries.split(";");
+        for (int i = 0; i < countryArray.length; i++) {
+            addElement("coverage", "spatial", countryArray[i], dcdoc, dcroot);
+        }
+
+        //Place of publication (kolonne 19) -> coverage.spatial
+        String places = item[19];
+        String[] placeArray = places.split(";");
+        for (int i = 0; i < placeArray.length; i++) {
+            addElement("coverage", "spatial", placeArray[i], dcdoc, dcroot);
+        }
+
+
+        //Publisher (kolonne 20) -> publisher
+        String publishers = item[20];
+        String[] publisherArray = publishers.split(";");
+        for (int i = 0; i < publisherArray.length; i++) {
+            addElement("coverage", "spatial", publisherArray[i], dcdoc, dcroot);
+        }
+
+        //Date of publication (standardised) (kolonne 20) -> issued date
+        //I am not sure about required format for dates...
+        String date = item[21];
+        if (!date.equals("")) {
+            if (date.matches("\\d{4}")) {
+                addElement("date", "issued", date, dcdoc, dcroot);
+            } else {
+                if (date.matches("\\d{4}-\\d{4}")) {
+                    addElement("date", "issued", date.substring(0,4), dcdoc, dcroot);
+                    addElement("date", "issued", date.substring(5,9), dcdoc, dcroot);
+                }
+            }
+        }
+
+        //Edition (kolonne 24) -> ?
+        //Physical description (kolonne 24) -> description
+        if (!item[24].equals("")) {
+            addElement("description", null, "Physical description: "+item[24], dcdoc, dcroot);
+        }
+
+        //BL Shelfmark (kolonne 27) -> ?
+        //Topics (kolonne 28) -> subject
+        String topics = item[28];
+        log.debug("topics = "+topics);
+        if (!topics.equals("")) {
+            String[] topicList = topics.split(";");
+            for (String topic: topicList) {
+                addElement("subject", null, topic, dcdoc, dcroot);
+            }
+        }
+
+        //Genre
+        //Literary form
+        //Languages (kolonne 31) -> language
+        String languages = item[31];
+        if (!languages.equals("")) {
+            String[] languageList = languages.split(";");
+            for (String language: languageList) {
+                addElement("language", null, language, dcdoc, dcroot);
+            }
+        }
+
+        //Notes (kolonne 34) -> description
+        if (!item[33].equals("")) {
+            addElement("description", null, "Notes: "+item[33], dcdoc, dcroot);
+        }
+
+        // write the content into xml file
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        DOMSource source = new DOMSource(dcdoc);
+        StreamResult streamResult = new StreamResult(new File(item_directory, "dublin_core.xml"));
+        transformer.transform(source, streamResult);
+
+        // Output to console for testing
+        StreamResult consoleResult = new StreamResult(System.out);
+        transformer.transform(source, consoleResult);
+        System.out.println("\n");
+
+        //XMLUtil.write(doc, System.out, "UTF8");
+        //System.out.println(doc.toString());
+
+        //remember to write the contents file
+        contentsFileWriter.flush();
+        contentsFileWriter.close();
+        return true;
+
     }
 
     /**
@@ -304,7 +357,7 @@ public class BLdataPackager {
         if (qualifier!=null) {
             dcvalue.setAttribute("qualifier", qualifier);
         }
-        dcvalue.setAttribute("language", "da_DK");//no qualifier
         dcvalue.setTextContent(textContent);
         root.appendChild(dcvalue);
+    }
 }
