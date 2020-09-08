@@ -1,6 +1,7 @@
 package dk.statsbiblioteket.mediestream.loar.BL;
 
 import com.opencsv.CSVReader;
+import dk.statsbiblioteket.mediestream.loar.util.UnzipUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -167,12 +168,13 @@ public class BLdataPackager {
 
         //We copy the data to this directory and update the contents file
         //todo right now it's just the xml file along with the zip files - is that what we want?
+        //I will try to unpack the zip-file...
         String fileNameID = xmlFileName.substring(0, 11);
         File[] files = new File(dataDirectory).listFiles();
         for (int i = 0; i < files.length; i++) {
             File file = files[i];
             String fileName = file.getName();
-            if (fileName.startsWith(fileNameID) && (fileName.endsWith(".xml") || fileName.endsWith(".zip"))) {
+            if (fileName.startsWith(fileNameID) && (fileName.endsWith(".xml"))) {
                 Path fileSource = file.toPath();
                 Path fileDest = new File(item_directory, fileName).toPath();
                 try {
@@ -183,6 +185,10 @@ public class BLdataPackager {
                 //write the file name to the contents file
                 contentsFileWriter.write(fileName+"\n");
                 log.debug("fileName = "+fileName);
+            }
+            if (fileName.startsWith(fileNameID)  && fileName.endsWith(".zip")) {
+                UnzipUtility.unzip(file.getAbsolutePath(), item_directory.getAbsolutePath(), contentsFileWriter);
+                //todo test
             }
         }
 
@@ -271,7 +277,7 @@ public class BLdataPackager {
         String publishers = item[20];
         String[] publisherArray = publishers.split(";");
         for (int i = 0; i < publisherArray.length; i++) {
-            addElement("coverage", "spatial", publisherArray[i], dcdoc, dcroot);
+            addElement("publisher", null, publisherArray[i], dcdoc, dcroot);
         }
 
         //Date of publication (standardised) (kolonne 20) -> issued date
@@ -288,13 +294,15 @@ public class BLdataPackager {
             }
         }
 
-        //Edition (kolonne 24) -> ?
+        //Edition (kolonne 23) -> ?
         //Physical description (kolonne 24) -> description
         if (!item[24].equals("")) {
             addElement("description", null, "Physical description: "+item[24], dcdoc, dcroot);
         }
 
-        //BL Shelfmark (kolonne 27) -> ?
+        //BL Shelfmark (kolonne 27) -> dc.identifier.other
+        addElement("identifier", "other", "BL Shelfmark: " + item[27], dcdoc, dcroot);
+
         //Topics (kolonne 28) -> subject
         String topics = item[28];
         log.debug("topics = "+topics);
@@ -304,9 +312,25 @@ public class BLdataPackager {
                 addElement("subject", null, topic, dcdoc, dcroot);
             }
         }
+        //Genre (kolonne 29) -> subject
+        String genres = item[28];
+        log.debug("genres = "+genres);
+        if (!genres.equals("")) {
+            String[] genreList = genres.split(";");
+            for (String genre: genreList) {
+                addElement("subject", null, genre, dcdoc, dcroot);
+            }
+        }
+        //Literary form (kolonne 30) -> subject
+        String forms = item[28];
+        log.debug("topics = "+forms);
+        if (!forms.equals("")) {
+            String[] formList = forms.split(";");
+            for (String form: formList) {
+                addElement("subject", null, form, dcdoc, dcroot);
+            }
+        }
 
-        //Genre
-        //Literary form
         //Languages (kolonne 31) -> language
         String languages = item[31];
         if (!languages.equals("")) {
@@ -315,10 +339,22 @@ public class BLdataPackager {
                 addElement("language", null, language, dcdoc, dcroot);
             }
         }
+        //Language of original (kolonne 32) -> language
+        languages = item[32];
+        if (!languages.equals("")) {
+            String[] languageList = languages.split(";");
+            for (String language: languageList) {
+                addElement("language", null, language, dcdoc, dcroot);
+            }
+        }
 
-        //Notes (kolonne 34) -> description
+        //Contents (kolonne 33) -> description
         if (!item[33].equals("")) {
-            addElement("description", null, "Notes: "+item[33], dcdoc, dcroot);
+            addElement("description", null, "Contents: "+item[33], dcdoc, dcroot);
+        }
+        //Notes (kolonne 34) -> description
+        if (!item[34].equals("")) {
+            addElement("description", null, "Notes: "+item[34], dcdoc, dcroot);
         }
 
         // write the content into xml file

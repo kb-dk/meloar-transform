@@ -6,8 +6,8 @@ import org.testng.annotations.Test;
 
 public class BLdataPackagerTest {
 
-    String outputdir = "BL/src/test/resources/output/0000";
-    String datadir = "BL/data/0000";
+    String outputdir = "BL/src/test/resources/output/2";
+    String datadir = "BL/data/2";
     String csvfile = "BL/src/test/resources/input/Microsoft Books records 2019-09-19.csv";
 
     @BeforeMethod

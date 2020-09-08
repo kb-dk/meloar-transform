@@ -1,36 +1,36 @@
-Microsoft Books records 2019-09-19.xlsx,LOAR DC Field
-BL record ID,dc.identifier.other
-ARK,dc.identifier.other
-URL,dc.relation.uri
-Type of resource,dc.type
-Content type,dc.type
-Material type,dc.type
-LC number,
-OCLC number,
-Name,dc.contributor.author
-Dates associated with name,
-Type of name,
-Role,
-All names,dc.contributor
-Title,dc.title
-Uniform title,
-Variant titles,
-Series title,
-Number within series,
-Country of publication,dc.coverage.spatial
-Place of publication,dc.coverage.spatial
-Publisher,dc.publisher
-Date of publication (standardised),dc.date.issued
-Date of publication (not standardised),
-Edition,
-Physical description,dc.description
-Dewey classification,
-Library of Congress classification,
-BL shelfmark,
-Topics,dc.subject
-Genre,
-Literary form,
-Languages,dc.language
-Language of original,
-Contents,
-Notes,dc.description
+Microsoft Books records 2019-09-19.xlsx,LOAR DC Field,Noter
+BL record ID,dc.identifier.other,
+ARK,dc.identifier.other,
+URL,dc.relation.uri,
+Type of resource,dc.type,
+Content type,dc.type,
+Material type,dc.type,
+LC number,,Sjældent brugt (identifier.other/relation)
+OCLC number,,Sjældent brugt (identifier.other/relation)
+Name,dc.contributor.author,
+Dates associated with name,,Den har vi ikke et felt til
+Type of name,,Den har vi ikke et felt til
+Role,,Den har vi ikke et felt til
+All names,dc.contributor,
+Title,dc.title,
+Uniform title,dc.title.alternative,
+Variant titles,dc.title.alternative,
+Series title,dc.relation.ispartofseries,
+Number within series,,"relevant, men hvor hører den til?"
+Country of publication,dc.coverage.spatial,
+Place of publication,dc.coverage.spatial,
+Publisher,dc.publisher,
+Date of publication (standardised),dc.date.issued,
+Date of publication (not standardised),,ikke vigtig
+Edition,,"relevant, men hvor hører den til?"
+Physical description,dc.description,
+Dewey classification,,Sjældent brugt (identifier.other/relation)
+Library of Congress classification,,Sjældent brugt (identifier.other/relation)
+BL shelfmark,dc.identifier.other ,
+Topics,dc.subject,
+Genre,,Den kunne komme i dc.subject
+Literary form,,Den kunne komme i dc.subject
+Languages,dc.language,
+Language of original,,Den kunne komme i dc.language
+Contents,,"Sjældent brugt, nok dc.description"
+Notes,dc.description,
