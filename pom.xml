@@ -19,6 +19,7 @@
         <module>folkeskole</module>
         <module>kirker</module>
         <module>daner</module>
+        <module>lyna</module>
         <!--<module>virk</module>-->
     </modules>
 
