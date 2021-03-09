@@ -2,13 +2,10 @@ package dk.statsbiblioteket.mediestream.loar.daner;
 
 import org.testng.annotations.Test;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import java.io.IOException;
-
 public class DanerPackagerTest {
 
     private String input_dir = "/home/baj/Projects/meloar-transform/daner/src/main/resources/input/faces2";
+    private String csv_file = "/home/baj/Projects/meloar-transform/daner/src/main/resources/input/newest.csv";
     private String output_dir = "/home/baj/Projects/meloar-transform/daner/src/main/resources/output";
 
     @org.testng.annotations.BeforeMethod
@@ -20,8 +17,8 @@ public class DanerPackagerTest {
     }
 
     @Test
-    public void testReadInputAndWriteToSAF() throws IOException, ParserConfigurationException, TransformerException {
-        DanerPackager.readInputAndWriteToSAF(input_dir, output_dir);
+    public void testReadInputAndWriteToSAF() {
+        DanerCSVReader.readCSVFileAndWriteToSAF(input_dir, csv_file, output_dir);
     }
 
 }

@@ -18,6 +18,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -33,31 +34,23 @@ public class DanerPackager {
     private static int count = 0;
 
     /**
-     * Read the input images AND write a LOAR input file for each image.
-     * @param inputdirectory the image directory
-     */
-    public static void readInputAndWriteToSAF(String inputdirectory, String outputdirectory) throws IOException, ParserConfigurationException, TransformerException {
-        File inputdir = new File(inputdirectory);
-        if (inputdir.isDirectory()) {
-            File[] images = inputdir.listFiles();
-            for (File image: images) {
-                writeItemAsSAF(image, outputdirectory);
-            }
-        }
-    }
-
-    /**
      * Write a LOAR DSpace Simple Archive Format structure based on the given line.
-     * @param item String array with metadata for 1 item
+     * @param line String array with metadata for 1 item
      * @param outputdirectory String directory name where to put structure
      */
-    public static void writeItemAsSAF(File item, String outputdirectory) throws IOException, ParserConfigurationException, TransformerException {
-        System.out.println(count);
+    public static boolean writeItemAsSAF(String datadirectory, String[] line, String outputdirectory) throws IOException, ParserConfigurationException, TransformerException {
+
+        // Only do something if you have the file
+        File image = new File(line[0]);
+        if (!image.exists()) { return false;}
+
+        log.debug("Entering writeItemAsSAF with line = "+ Arrays.toString(line));
 
         //First we need a directory for this item
         File item_directory = new File(outputdirectory, "item" + count);
         item_directory.mkdir();
         count++;
+        log.debug("count = "+count);
 
         //The contents file simply enumerates, one file per line, the bitstream file names
         //The bitstream name may optionally be followed by \tpermissions:PERMISSIONS
@@ -73,18 +66,59 @@ public class DanerPackager {
         dcroot.setAttribute("schema", "dc");
         dcdoc.appendChild(dcroot);
 
-        Path imageFileSource = item.toPath();
-        Path imageFileDest = new File(item_directory, item.getName()).toPath();
-        try {
-            Files.copy(imageFileSource, imageFileDest, REPLACE_EXISTING);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //write the file name to the contents file
-        contentsFileWriter.write(item.getName());
+            //Copy the image file to the item directory
+            Path imageFileSource = image.toPath();
+            Path imageFileDest = new File(item_directory, line[0]).toPath();
+            try {
+                Files.copy(imageFileSource, imageFileDest, REPLACE_EXISTING);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //write the file name to the contents file
+            contentsFileWriter.write(line[0]);
 
-        //write the file to the dublin core file
-        addElement("title", null, item.getName(), dcdoc, dcroot);
+        // Write metadata to DC file
+        // write the FileName (line[0]) to the dublin core file: NO
+
+        // write the PersonsName (line[1]) to the dublin core file
+        // write the PersonsFamilyName (line[2]) to the dublin core file
+        // Combine the two into title
+        String title = line[1] + " " + line[2];
+        addElement("title", null, title, dcdoc, dcroot);
+
+        // write the DateOfBirth (line[3]) to the dublin core file
+        // write the DateOfDeath (line[4]) to the dublin core file
+        // write the PersonsJob (line[6]) to the dublin core file
+        // Combine the three into description - or rather the five
+        String description = line[2] + ", " + line[1] + " (" + line[3] + "-" + line[4] + ") " + line[6];
+        addElement("description", null, description, dcdoc, dcroot);
+
+        // write the DateOfPhotography (line[5]) to the dublin core file
+        String date = line[5];
+        if (!date.equals("")) {
+            if (date.matches("\\d{4}")) {
+                addElement("date", "issued", date, dcdoc, dcroot);
+            } else {
+                if (date.matches("\\d{4}-\\d{4}")) {
+                    addElement("date", "issued", date.substring(0,4), dcdoc, dcroot);
+                    addElement("date", "issued", date.substring(5,9), dcdoc, dcroot);
+                }
+            }
+        }
+
+        // write the Photographer (line[7]) to the dublin core file
+        addElement("contributor", "author", line[7],dcdoc, dcroot);
+
+        // write the LinkToRoyalDanishLibrarysDigitalCollections (line[8]) to the dublin core file
+        addElement("relation", "uri", line[8], dcdoc, dcroot);
+
+        // write type
+        addElement("type", null, "Image", dcdoc, dcroot);
+        // write subjects
+        addElement("subject", null, "Photograph", dcdoc, dcroot);
+        //add publisher to DC
+        addElement("publisher", null, "Det Kgl. Bibliotek", dcdoc, dcroot);
+
 
         // write the content into xml file
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -96,7 +130,7 @@ public class DanerPackager {
         //remember to write the contents file
         contentsFileWriter.flush();
         contentsFileWriter.close();
-
+        return true;
     }
     /**
      *

@@ -71,6 +71,8 @@ public class LynaPackager {
 
         //Date issued
         addElement("date", "issued", year, dcdoc, dcroot);
+        //Place issued
+        addElement("coverage", "spatial", "Haderslev", dcdoc, dcroot);
         //Data type
         addElement("type", null, "Dataset", dcdoc, dcroot);
         //Author
@@ -80,11 +82,12 @@ public class LynaPackager {
         //Rights
         addElement("rights", null, "CC0 1.0 Universal",dcdoc, dcroot);
         addElement("rights", "uri", "http://creativecommons.org/publicdomain/zero/1.0/", dcdoc, dcroot);
-        //Subject
+        //Subjects
         addElement("subject", null, "newspaper", dcdoc, dcroot);
+        addElement("subject", null, "Lyna", dcdoc, dcroot);
 
         //todo Slightly different names in different periods
-        if (Integer.parseInt(year)<=1839) {//Lyna. Eine Wochenschrift (1797-1839)
+        if (Integer.parseInt(year)<1839) {//Lyna. Eine Wochenschrift (1797-1839)
             //Title
             addElement("title", null, "Lyna. Eine Wochenschrift ("+year+")", dcdoc, dcroot);
             //Subject
@@ -93,7 +96,74 @@ public class LynaPackager {
             addElement("description", "abstract", "Newspaper from "+year+": Lyna. Eine Wochenschrift.", dcdoc, dcroot);
             //Link til mediestream
             addElement("relation", "uri", "http://www2.statsbiblioteket.dk/mediestream/avis/list/" +
-                    "doms_newspaperAuthority%3Auuid%3A9f16621f-4756-465e-8315-bc86cbea4de8", dcdoc, dcroot);
+                    "doms_newspaperAuthority%3Auuid%3A9f16621f-4756-465e-8315-bc86cbea4de8", dcdoc, dcroot);//Lyna. Eine Wochenschrift (1797-1839)
+        }
+        if (Integer.parseInt(year)==1839) {//Lyna. Eine Wochenschrift (1797-1839) Lyna. Haderslebener Wochenblatt (1839-1840)
+            //Title
+            addElement("title", null, "Lyna. Eine Wochenschrift ("+year+")", dcdoc, dcroot);
+            addElement("title", "alternative", "Lyna. Haderslebener Wochenblatt ("+year+")", dcdoc, dcroot);
+            //Subject
+            addElement("subject", null, "Lyna. Eine Wochenschrift (1797-1839)", dcdoc, dcroot);
+            addElement("subject", null, "Lyna. Haderslebener Wochenblatt (1839-1840)", dcdoc, dcroot);
+            //Description
+            addElement("description", "abstract", "Newspaper from "+year+": Lyna. Eine Wochenschrift ((01-01-1839 - 30-06-1839)). " +
+                    "Lyna. Haderslebener Wochenblatt (07-07-1839 - 31-12-1839)", dcdoc, dcroot);
+            //Links til mediestream
+            addElement("relation", "uri", "http://www2.statsbiblioteket.dk/mediestream/avis/list/" +
+                    "doms_newspaperAuthority%3Auuid%3A9f16621f-4756-465e-8315-bc86cbea4de8", dcdoc, dcroot);//Lyna. Eine Wochenschrift (1797-1839)
+            addElement("relation", "uri", "http://www2.statsbiblioteket.dk/mediestream/avis/list/" +
+                    "doms_newspaperAuthority%3Auuid%3A7926dc57-6300-4f47-9d30-3a43ccd1dd3e", dcdoc, dcroot);//Lyna. Haderslebener Wochenblatt (1839-1840)
+        }
+        if (Integer.parseInt(year)==1840) {//Lyna. Haderslebener Wochenblatt (1839-1840) Lyna (1840-1843)
+            //Title
+            addElement("title", null, "Lyna. Haderslebener Wochenblatt ("+year+")", dcdoc, dcroot);
+            addElement("title", "alternative", "Lyna ("+year+")", dcdoc, dcroot);
+            //Subject
+            addElement("subject", null, "Lyna. Haderslebener Wochenblatt (1839-1840)", dcdoc, dcroot);
+            addElement("subject", null, "Lyna (1840-1843)", dcdoc, dcroot);
+            //Description
+            addElement("description", "abstract", "Newspaper from "+year+": Lyna. Haderslebener Wochenblatt (01-01-1840 - 05-04-1840). " +
+                    "Lyna (12-04-1840 - 31-12-1840)", dcdoc, dcroot);
+            //Links til mediestream
+            addElement("relation", "uri", "http://www2.statsbiblioteket.dk/mediestream/avis/list/" +
+                    "doms_newspaperAuthority%3Auuid%3A7926dc57-6300-4f47-9d30-3a43ccd1dd3e", dcdoc, dcroot);//Lyna. Haderslebener Wochenblatt (1839-1840)
+            addElement("relation", "uri", "http://www2.statsbiblioteket.dk/mediestream/avis/list/" +
+                    "doms_newspaperAuthority:uuid:2de94e6c-621f-485b-bfbe-4673c732270f", dcdoc, dcroot);//Lyna (1840-1843)
+        }
+        if (Integer.parseInt(year)>1840 && Integer.parseInt(year)<1844) {//Lyna (1840-1843)
+            //Title
+            addElement("title", null, "Lyna ("+year+")", dcdoc, dcroot);
+            //Subject
+            addElement("subject", null, "Lyna (1840-1843)", dcdoc, dcroot);
+            //Description
+            addElement("description", "abstract", "Newspaper from "+year+": Lyna ", dcdoc, dcroot);
+            //Link til mediestream
+            addElement("relation", "uri", "http://www2.statsbiblioteket.dk/mediestream/avis/list/" +
+                    "doms_newspaperAuthority:uuid:2de94e6c-621f-485b-bfbe-4673c732270f", dcdoc, dcroot);//Lyna (1840-1843)
+        }
+        if (Integer.parseInt(year)>1843 && Integer.parseInt(year)<1848) {//Lyna. Wochenblatt für Hadersleben und Umgegend / Ugeblad for Haderslev og Omegn (1844-1847)
+            //Title
+            addElement("title", null, "Lyna. Wochenblatt für Hadersleben und Umgegend / Ugeblad for Haderslev og Omegn ("+year+")", dcdoc, dcroot);
+            //Subject
+            addElement("subject", null, "Lyna. Wochenblatt für Hadersleben und Umgegend / Ugeblad for Haderslev og Omegn (1844-1847)", dcdoc, dcroot);
+            //Description
+            addElement("description", "abstract", "Newspaper from "+year+": Lyna. " +
+                    "Wochenblatt für Hadersleben und Umgegend / Ugeblad for Haderslev og Omegn", dcdoc, dcroot);
+            //Link til mediestream
+            addElement("relation", "uri", "http://www2.statsbiblioteket.dk/mediestream/avis/list/" +
+                    "doms_newspaperAuthority:uuid:c77a67e6-fa74-47a7-9c45-e894a2a69ca1", dcdoc, dcroot);//Lyna (1840-1843)
+        }
+        if (Integer.parseInt(year)==1848) {//Lyna. Ein schleswigsches Wochenblatt (1848)
+            //Title
+            addElement("title", null, "Lyna. Ein schleswigsches Wochenblatt (1848)", dcdoc, dcroot);
+            //Subject
+            addElement("subject", null, "Lyna. Ein schleswigsches Wochenblatt (1848)", dcdoc, dcroot);
+            //Description
+            addElement("description", "abstract", "Newspaper from "+year+": Lyna. " +
+                    "Ein schleswigsches Wochenblatt (1848)", dcdoc, dcroot);
+            //Link til mediestream
+            addElement("relation", "uri", "http://www2.statsbiblioteket.dk/mediestream/avis/list/" +
+                    "doms_newspaperAuthority:uuid:2c3d372b-7197-4ec9-aa01-323e4821ed7e", dcdoc, dcroot);//Lyna (1840-1843)
         }
 
         // write the content into xml file
