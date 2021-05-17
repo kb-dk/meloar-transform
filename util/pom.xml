@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>lyna</artifactId>
+    <artifactId>util</artifactId>
     <version>0.1-SNAPSHOT</version>
 
 
@@ -36,7 +36,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>dk.statsbiblioteket.mediestream.loar.lyna.LynaPackager</mainClass>
+                            <mainClass>dk.statsbiblioteket.mediestream.loar.util.UnzipUtility</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

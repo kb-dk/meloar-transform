@@ -3,24 +3,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>dk.statsbiblioteket.medieplatform</groupId>
-    <artifactId>meloar-transform</artifactId>
+    <artifactId>folkeskole</artifactId>
     <version>0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
 
 
     <parent>
-        <groupId>dk.statsbiblioteket.sbprojects</groupId>
-        <artifactId>sbprojects-parent</artifactId>
-        <version>15</version>
+        <groupId>dk.statsbiblioteket.medieplatform</groupId>
+        <artifactId>meloar-transform</artifactId>
+        <version>0.1-SNAPSHOT</version>
     </parent>
 
-    <modules>
-        <module>fof</module>
-        <module>folkeskole</module>
-        <module>kirker</module>
-        <!--<module>virk</module>-->
-    </modules>
 
     <properties>
 
@@ -29,64 +21,30 @@
 
 
     <dependencies>
-        <dependency>
-            <groupId>dk.statsbiblioteket.sbprojects</groupId>
-            <artifactId>sbprojects-parent</artifactId>
-            <version>15</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>com.opencsv</groupId>
-            <artifactId>opencsv</artifactId>
-            <version>3.8</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.opennlp</groupId>
-            <artifactId>opennlp-tools</artifactId>
-            <version>1.7.0</version>
-        </dependency>
-       <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-            <version>1.1.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.json-lib</groupId>
-            <artifactId>json-lib</artifactId>
-            <version>2.4</version>
-            <classifier>jdk15</classifier>
-        </dependency>
 
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>6.9.10</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.7</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.0.13</version>
-            <scope>runtime</scope>
-        </dependency>
     </dependencies>
+
     <repositories>
 
-</repositories>
+    </repositories>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>dk.statsbiblioteket.mediestream.loar.folkeskole.FolkeskoleSimplePackager</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <version>2.3.2</version>
+                <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <source>8</source>
                     <target>8</target>

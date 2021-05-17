@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>lyna</artifactId>
+    <artifactId>BL</artifactId>
     <version>0.1-SNAPSHOT</version>
 
 
@@ -21,7 +21,11 @@
 
 
     <dependencies>
-
+        <dependency>
+            <groupId>dk.statsbiblioteket.medieplatform</groupId>
+            <artifactId>util</artifactId>
+            <version>0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <repositories>
@@ -36,7 +40,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>dk.statsbiblioteket.mediestream.loar.lyna.LynaPackager</mainClass>
+                            <mainClass>dk.statsbiblioteket.mediestream.loar.BL.BLdataPackager</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

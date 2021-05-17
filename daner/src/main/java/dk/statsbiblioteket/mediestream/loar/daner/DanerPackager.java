@@ -40,11 +40,13 @@ public class DanerPackager {
      */
     public static boolean writeItemAsSAF(String datadirectory, String[] line, String outputdirectory) throws IOException, ParserConfigurationException, TransformerException {
 
+        log.debug("Entering writeItemAsSAF with line = "+ Arrays.toString(line));
+
         // Only do something if you have the file
-        File image = new File(line[0]);
+        File image = new File(datadirectory, line[0]);
+        log.debug("Image file = " + image.toString());
         if (!image.exists()) { return false;}
 
-        log.debug("Entering writeItemAsSAF with line = "+ Arrays.toString(line));
 
         //First we need a directory for this item
         File item_directory = new File(outputdirectory, "item" + count);

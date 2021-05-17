@@ -20,6 +20,9 @@
         <module>kirker</module>
         <module>daner</module>
         <module>lyna</module>
+        <module>aviser</module>
+        <module>BL</module>
+        <module>util</module>
         <!--<module>virk</module>-->
     </modules>
 
