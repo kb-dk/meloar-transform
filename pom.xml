@@ -3,25 +3,32 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.sbforge</groupId>
+        <artifactId>sbforge-parent</artifactId>
+        <version>22</version>
+    </parent>
+
     <groupId>dk.statsbiblioteket.medieplatform</groupId>
     <artifactId>meloar-transform</artifactId>
     <version>0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <parent>
-        <groupId>dk.statsbiblioteket.sbprojects</groupId>
-        <artifactId>sbprojects-parent</artifactId>
-        <version>6</version>
-    </parent>
+    <scm>
+        <url>https://github.com/kb-dk/meloar-transform</url>
+        <connection>scm:git:ssh://git@github.com:kb-dk/meloar-transform.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:kb-dk/meloar-transform.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>fof</module>
         <module>folkeskole</module>
         <module>kirker</module>
-        <module>daner</module>
+        <!--<module>daner</module>-->
         <module>lyna</module>
         <module>aviser</module>
-        <module>BL</module>
+        <!--<module>BL</module>-->
         <module>util</module>
         <!--<module>virk</module>-->
     </modules>
@@ -99,10 +106,25 @@
                     <target>8</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.12.4</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
         </plugins>
-    </build>
-    <profiles>
 
-    </profiles>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.3.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+    </build>
 
 </project>

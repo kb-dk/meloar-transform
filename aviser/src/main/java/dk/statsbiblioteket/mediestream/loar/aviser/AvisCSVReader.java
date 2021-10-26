@@ -26,7 +26,7 @@ public class AvisCSVReader {
      */
     public static void readCSVFileAndWriteToSAF(String datadirectory, String csvFile, String outputdirectory) {
 
-        System.out.println(csvFile);
+        //System.out.println(csvFile);
         CSVReader reader = null;
         CSVWriter writer = null;
         try {
@@ -37,7 +37,7 @@ public class AvisCSVReader {
 
             while ((line = reader.readNext()) != null) {
                 if (!line[0].isEmpty()) {
-                    System.out.println("line[0]="+line[0]);
+                    //System.out.println("line[0]="+line[0]);
                     boolean success = writeItemAsSAF(datadirectory, line, outputdirectory);
                     if (!success) {
                         //write the lines that were not transformed to a LOAR item
@@ -47,11 +47,7 @@ public class AvisCSVReader {
             }
             writer.flush();
             writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (TransformerException e) {
-            e.printStackTrace();
-        } catch (ParserConfigurationException e) {
+        } catch (IOException | TransformerException | ParserConfigurationException e) {
             e.printStackTrace();
         }
     }
