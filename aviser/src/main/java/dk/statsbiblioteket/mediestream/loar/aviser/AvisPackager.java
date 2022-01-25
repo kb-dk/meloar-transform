@@ -41,6 +41,8 @@ public class AvisPackager {
     private static Logger log = LoggerFactory.getLogger(AvisPackager.class);
     private static final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     private static int count = 0;
+    private static String attribute_language_da = "da";
+    private static String attribute_language_en_US = "en_US";
 
     /**
      * Write a LOAR DSpace Simple Archive Format structure based on the given line.
@@ -54,15 +56,16 @@ public class AvisPackager {
         log.debug("entering writeItemAsSAF method with parameters: (" + datadirectory + ", " + Arrays.toString(line) + "," + outputdirectory + ")");
 
         // Only do something if you have the file
-        // Resource kolonne 7
+        // Resource kolonne 6
         File batch = null;
-        if (line.length>7) {
-            batch = new File(datadirectory, line[7]);
+        if (line.length>6) {
+            batch = new File(datadirectory, line[6]);
             log.debug("Batch file = " + batch.toString());
             if (!batch.exists()) {
                 return false;
             }
         } else {
+            log.debug("line.length="+line.length);
             return false;
         }
 
@@ -72,14 +75,11 @@ public class AvisPackager {
         count++;
         log.debug("count = " + count);
 
-        //We also need to move the zip file to this new directory
-        //Files.copy() // I don't want to copy big zip files if I don't have to
+        //We also need to move or link or copy the zip file to this new directory
+        //Files.copy()
         Path batch_path = batch.toPath();
-        File item_bitstream = new File(item_directory, line[7]);
-        Path item_bitstream_path = item_bitstream.toPath();
-        if (!item_bitstream.exists()) {
-            Files.createSymbolicLink(item_bitstream_path, batch_path);
-        }
+
+            Files.copy(batch_path, item_directory.toPath().resolve(batch_path.getFileName()));
 
         //The contents file simply enumerates, one file per line, the bitstream file names
         //The bitstream name may optionally be followed by \tpermissions:PERMISSIONS
@@ -97,27 +97,28 @@ public class AvisPackager {
         dcdoc.appendChild(dcroot);
 
         //Title: Avis id kolonne 2 + Batch kolonne 0
-        addElement("title", null, line[2]+" Batch "+line[0], dcdoc, dcroot);
+        addElement("title", null, line[2]+" Batch "+line[0], attribute_language_da, dcdoc, dcroot);
         //Dates issued: Start Date kolonne 3 / End Date kolonne 4
-        addElement("date", "issued", line[3] + "/" + line[4], dcdoc, dcroot);
+        addElement("date", "issued", line[3] + "/" + line[4], null, dcdoc, dcroot);
         //Place issued: Denmark
-        addElement("coverage", "spatial", "Denmark", dcdoc, dcroot);
+        addElement("coverage", "spatial", "Denmark",attribute_language_en_US, dcdoc, dcroot);
         //Data type: Dataset
-        addElement("type", null, "Dataset", dcdoc, dcroot);
+        addElement("type", null, "Dataset", attribute_language_en_US, dcdoc, dcroot);
         //Author: Royal Danish Library
-        addElement("contributor", "author", "Royal Danish Library", dcdoc, dcroot);
+        addElement("contributor", "author", "Royal Danish Library", attribute_language_en_US, dcdoc, dcroot);
         //Language: da
-        addElement("language", null, "da", dcdoc, dcroot);
+        addElement("language", null, "da", null, dcdoc, dcroot);
         //Rights: Public Domain
-        addElement("rights", null, "CC0 1.0 Universal", dcdoc, dcroot);
-        addElement("rights", "uri", "http://creativecommons.org/publicdomain/zero/1.0/", dcdoc, dcroot);
+        addElement("rights", null, "CC Public Domain", attribute_language_en_US, dcdoc, dcroot);
+        addElement("rights", "uri", "https://creativecommons.org/publicdomain/mark/1.0/deed.en",
+                attribute_language_en_US, dcdoc, dcroot);
         //Subjects: newspaper
-        addElement("subject", null, "newspaper", dcdoc, dcroot);
+        addElement("subject", null, "newspaper", attribute_language_en_US, dcdoc, dcroot);
         //Description: Avis id kolonne 2 + Batch kolonne 0 + Roundtrip kolonne 1
         // + Start Date kolonne 3 / End Date kolonne 4
         // + Pages kolonne 5 + Unmatched Pages kolonne 6
         addElement("description", "abstract", line[2]+". Batch "+line[0]+". Roundtrip "+line[1]+
-                ". "+line[3] + "/" + line[4]+". Pages: "+line[5]+". Unmatched Pages: "+line[6]+"." , dcdoc, dcroot);
+                ". "+line[3] + "/" + line[4]+". Pages: "+line[5]+".", null, dcdoc, dcroot);
 
         // write the content into xml file
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -143,13 +144,15 @@ public class AvisPackager {
      * @param doc
      * @param root
      */
-    public static void addElement(String element, String qualifier, String textContent, Document doc, Element root) {
+    public static void addElement(String element, String qualifier, String textContent, String attribute_language, Document doc, Element root) {
         Element dcvalue = doc.createElement("dcvalue");
         dcvalue.setAttribute("element", element);
         if (qualifier!=null) {
             dcvalue.setAttribute("qualifier", qualifier);
         }
-        dcvalue.setAttribute("language", "en_US");
+        if (attribute_language!=null) {
+            dcvalue.setAttribute("language", attribute_language);
+        }
         dcvalue.setTextContent(textContent);
         root.appendChild(dcvalue);
     }
