@@ -31,6 +31,7 @@
         <!--<module>BL</module>-->
         <module>util</module>
         <!--<module>virk</module>-->
+        <module>veda</module>
     </modules>
 
     <repositories>
