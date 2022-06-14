@@ -4,9 +4,9 @@ import org.testng.annotations.Test;
 
 public class VedaPackagerTest {
 
-    private final String input_dir = "/home/baj/Tmp/aviser_input";
-    private final String csv_file = "/home/baj/Projects/meloar-transform/aviser/src/main/resources/aviser_20211026_del1_002-021.csv";
-    private final String output_dir = "/home/baj/Projects/meloar-transform/aviser/src/main/resources/output";
+    private final String input_dir = "/home/baj/Projects/meloar-transform/veda/src/test/resources/input";
+    private final String csv_file = "/home/baj/Projects/meloar-transform/veda/src/test/resources/Veda-metadata_jamo_short.csv";
+    private final String output_dir = "/home/baj/Projects/meloar-transform/veda/src/test/resources/output";
 
     @org.testng.annotations.BeforeMethod
     public void setUp() {

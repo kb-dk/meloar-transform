@@ -13,12 +13,14 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * The VEDA data consist of approx 500 wav files, totalling 157,9 GB
@@ -37,25 +39,21 @@ public class VedaPackager {
      * Write a LOAR DSpace Simple Archive Format structure based on the given line.
      *
      * @param datadirectory   String directoryname name where to read data
-     * @param line            String array with metadata for 1 item
      * @param outputdirectory String directory name where to put structure
      */
-    public static boolean writeItemAsSAF(String datadirectory, String[] line, String outputdirectory) throws IOException,
+    public static boolean writeItemAsSAF(String datadirectory, String[] line, LinkedList<String> records, String outputdirectory) throws IOException,
             ParserConfigurationException, TransformerException {
         log.debug("entering writeItemAsSAF method with parameters: (" + datadirectory + ", " + Arrays.toString(line) + "," + outputdirectory + ")");
 
-        // Only do something if you have the file
-        // Record Name kolonne 0
-        File wavFile = null;
-        if (line.length>1) {
-            wavFile = new File(datadirectory, line[6]);
-            log.debug("wav file = " + wavFile.toString());
+        // Only do something if you have the files
+        LinkedList<File> wavFiles = new LinkedList<>();
+        for (String filename: records) {
+            File wavFile = new File(datadirectory, filename);
+            wavFiles.add(wavFile);
+            log.debug("wav file = " + wavFile);
             if (!wavFile.exists()) {
                 return false;
             }
-        } else {
-            log.debug("line.length="+line.length);
-            return false;
         }
 
         //First we need a directory for this item
@@ -64,18 +62,25 @@ public class VedaPackager {
         count++;
         log.debug("count = " + count);
 
-        //We also need to move or link or copy the wav file to this new directory
-        //Files.copy()
-        Path wavfile_path = wavFile.toPath();
-
-            Files.copy(wavfile_path, item_directory.toPath().resolve(wavfile_path.getFileName()));
-
         //The contents file simply enumerates, one file per line, the bitstream file names
         //The bitstream name may optionally be followed by \tpermissions:PERMISSIONS
         File contents = new File(item_directory, "contents");
         contents.createNewFile();
         FileWriter contentsFileWriter = new FileWriter(contents);
-        contentsFileWriter.write(wavFile.getName());
+
+        //We also need to move or link or copy the wav files to this new directory
+        //Files.copy()
+        for (File file: wavFiles) {
+            Path wavfile_path = file.toPath();
+            Files.copy(wavfile_path, item_directory.toPath().resolve(wavfile_path.getFileName()));
+            contentsFileWriter.write(file.getName());
+        }
+
+        //TODO And we would like a zip file with all the wav files
+        File zipFile = new File(item_directory, "all.zip");
+        zip(wavFiles, zipFile);
+        contentsFileWriter.write(zipFile.getName());
+
 
         //The dublin_core.xml file contains some of the metadata as dublin core
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -85,29 +90,32 @@ public class VedaPackager {
         dcroot.setAttribute("schema", "dc");
         dcdoc.appendChild(dcroot);
 
-        //Title: Avis id kolonne 2 + Batch kolonne 0
-        addElement("title", null, line[2]+" Batch "+line[0], attribute_language_da, dcdoc, dcroot);
-        //Dates issued: Start Date kolonne 3 / End Date kolonne 4
-        addElement("date", "issued", line[3] + "/" + line[4], null, dcdoc, dcroot);
-        //Place issued: Denmark
-        addElement("coverage", "spatial", "Denmark",attribute_language_en_US, dcdoc, dcroot);
-        //Data type: Dataset
-        addElement("type", null, "Dataset", attribute_language_en_US, dcdoc, dcroot);
-        //Author: Royal Danish Library
-        addElement("contributor", "author", "Royal Danish Library", attribute_language_en_US, dcdoc, dcroot);
-        //Language: da
-        addElement("language", null, "da", null, dcdoc, dcroot);
+        //Title: S18 Titel (U20 Sprog)
+        addElement("title", null, line[18], line[20], dcdoc, dcroot);
+        //Subtitle: H7 Under-titel (U20 Sprog)
+        addElement("title", "subtitle", line[7], line[20], dcdoc, dcroot);
+        //Alternative title: P15 Alternativ titel (U20 Sprog)
+        addElement("title", "alternative", line[15], line[20], dcdoc, dcroot);
+        //Date issued: G6 Dato ikke efter
+        addElement("date", "issued", line[6], null, dcdoc, dcroot);
+        //Data type: Recording, oral
+        addElement("type", null, "Recording, oral", attribute_language_en_US, dcdoc, dcroot);
+        //Author: Q16 Medvirkende
+        addElement("contributor", "author", line[16], null, dcdoc, dcroot);
+        //Publisher: M12 Udgiver
+        addElement("publisher", null, line[12], null, dcdoc, dcroot);
+        //Language: U20 Sprog
+        addElement("language", null, line[20], null, dcdoc, dcroot);
         //Rights: Public Domain
         addElement("rights", null, "CC Public Domain", attribute_language_en_US, dcdoc, dcroot);
         addElement("rights", "uri", "https://creativecommons.org/publicdomain/mark/1.0/deed.en",
                 attribute_language_en_US, dcdoc, dcroot);
-        //Subjects: newspaper
-        addElement("subject", null, "newspaper", attribute_language_en_US, dcdoc, dcroot);
-        //Description: Avis id kolonne 2 + Batch kolonne 0 + Roundtrip kolonne 1
-        // + Start Date kolonne 3 / End Date kolonne 4
-        // + Pages kolonne 5 + Unmatched Pages kolonne 6
-        addElement("description", "abstract", line[2]+". Batch "+line[0]+". Roundtrip "+line[1]+
-                ". "+line[3] + "/" + line[4]+". Pages: "+line[5]+".", null, dcdoc, dcroot);
+        //Subjects: B1 Keywords, T19 Materialebetegnelse
+        addElement("subject", null, line[1], attribute_language_en_US, dcdoc, dcroot);
+        addElement("subject", null, line[19], attribute_language_da, dcdoc, dcroot);
+        //Description:
+        addElement("description", "abstract", "This work was recorded on "+wavFiles.size()+" tapes. " +
+                "The digitized tapes can be downloaded separately, or you can download them all as a zip file.", null, dcdoc, dcroot);
 
         // write the content into xml file
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -126,7 +134,7 @@ public class VedaPackager {
 
 
     /**
-     *
+     * Add DC element to document.
      * @param element
      * @param qualifier
      * @param textContent
@@ -145,8 +153,33 @@ public class VedaPackager {
         dcvalue.setTextContent(textContent);
         root.appendChild(dcvalue);
     }
+
     /**
-     * Package aviser batches for ingest into LOAR
+     * zip files into destFile.
+     * @param files
+     * @param destFile
+     * @throws IOException
+     */
+    public static void zip(List<File> files, File destFile) throws IOException {
+        FileOutputStream fos = new FileOutputStream(destFile);
+        ZipOutputStream zipOut = new ZipOutputStream(fos);
+        for (File f : files) {
+            FileInputStream fis = new FileInputStream(f);
+            ZipEntry zipEntry = new ZipEntry(f.getName());
+            zipOut.putNextEntry(zipEntry);
+
+            byte[] bytes = new byte[1024];
+            int length;
+            while((length = fis.read(bytes)) >= 0) {
+                zipOut.write(bytes, 0, length);
+            }
+            fis.close();
+        }
+        zipOut.close();
+        fos.close();
+    }
+    /**
+     * Package veda files for ingest into LOAR
      * @param args String input_dir String csv_file String output_dir
      */
     public static void main(String[] args) {
