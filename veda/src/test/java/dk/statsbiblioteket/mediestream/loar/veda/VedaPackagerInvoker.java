@@ -4,8 +4,8 @@ public class VedaPackagerInvoker {
 
     public static void main(String[] args) {
         VedaPackager.main(new String[]{
-                "aviser/src/test/resources/aviser_input",
-                "aviser/src/main/resources/aviser_20211026.csv",
-                "aviser/src/main/resources/output"});
+                "veda/src/test/resources/input",
+                "veda/src/test/resources/Veda-metadata_jamo_short.csv",
+                "veda/src/test/resources/output"});
     }
 }

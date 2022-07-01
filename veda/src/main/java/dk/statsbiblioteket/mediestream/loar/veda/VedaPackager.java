@@ -26,7 +26,6 @@ import java.util.zip.ZipOutputStream;
  * The VEDA data consist of approx 500 wav files, totalling 157,9 GB
  * The veda_opdeling_i_værker.xlsx file matches the files to titles.
  * Each title corresponds to an item including the files that map to this title.
- * TODO
  */
 public class VedaPackager {
     private static Logger log = LoggerFactory.getLogger(VedaPackager.class);
@@ -73,13 +72,14 @@ public class VedaPackager {
         for (File file: wavFiles) {
             Path wavfile_path = file.toPath();
             Files.copy(wavfile_path, item_directory.toPath().resolve(wavfile_path.getFileName()));
-            contentsFileWriter.write(file.getName());
+            contentsFileWriter.write(file.getName() + '\n');
         }
 
-        //TODO And we would like a zip file with all the wav files
+        //And we would like a zip file with all the wav files
         File zipFile = new File(item_directory, "all.zip");
         zip(wavFiles, zipFile);
         contentsFileWriter.write(zipFile.getName());
+        log.debug("zipfile: "+ Arrays.toString(zipFile.list()));
 
 
         //The dublin_core.xml file contains some of the metadata as dublin core
