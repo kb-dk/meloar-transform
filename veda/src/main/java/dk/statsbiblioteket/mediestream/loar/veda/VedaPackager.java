@@ -42,15 +42,15 @@ public class VedaPackager {
      */
     public static boolean writeItemAsSAF(String datadirectory, String[] line, LinkedList<String> records, String outputdirectory) throws IOException,
             ParserConfigurationException, TransformerException {
-        log.debug("entering writeItemAsSAF method with parameters: (" + datadirectory + ", " + Arrays.toString(line) + "," + outputdirectory + ")");
+        log.info("entering writeItemAsSAF method with parameters: (" + datadirectory + ", " + Arrays.toString(line) + "," + outputdirectory + ")");
 
         // Only do something if you have the files
         LinkedList<File> wavFiles = new LinkedList<>();
         for (String filename: records) {
             File wavFile = new File(datadirectory, filename);
             wavFiles.add(wavFile);
-            log.debug("wav file = " + wavFile);
             if (!wavFile.exists()) {
+                log.error("!wavFile.exists(). wav file = " + wavFile);
                 return false;
             }
         }
