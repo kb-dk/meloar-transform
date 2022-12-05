@@ -32,6 +32,7 @@
         <module>util</module>
         <!--<module>virk</module>-->
         <module>veda</module>
+        <module>minecraft</module>
     </modules>
 
     <repositories>
