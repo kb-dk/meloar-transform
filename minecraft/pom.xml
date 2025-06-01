@@ -14,26 +14,11 @@
 
 
     <repositories>
-        <repository>
-            <id>sbforge-nexus</id>
-            <url>https://sbforge.org/nexus/content/groups/public</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
+
     </repositories>
 
     <properties>
-        <!-- Specify java version here, to support forbiddenapis plugin -->
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <!-- Replace the line below with
-             <api.check.phase>none</api.check.phase>
-             to disable forbidden APIs check -->
-        <api.check.phase>none</api.check.phase>
+
     </properties>
 
     <dependencies>

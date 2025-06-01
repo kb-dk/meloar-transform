@@ -4,40 +4,30 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>aviser</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.3-SNAPSHOT</version>
 
     <parent>
         <groupId>dk.statsbiblioteket.medieplatform</groupId>
         <artifactId>meloar-transform</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <version>0.3-SNAPSHOT</version>
     </parent>
 
 
     <repositories>
-        <repository>
-            <id>sbforge-nexus</id>
-            <url>https://sbforge.org/nexus/content/groups/public</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
     </repositories>
 
     <properties>
-        <!-- Specify java version here, to support forbiddenapis plugin -->
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <!-- Replace the line below with
-             <api.check.phase>none</api.check.phase>
-             to disable forbidden APIs check -->
-        <api.check.phase>none</api.check.phase>
+
     </properties>
 
     <dependencies>
 
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-commons</artifactId>
+            <version>1.10.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

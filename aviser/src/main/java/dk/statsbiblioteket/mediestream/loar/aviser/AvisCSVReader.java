@@ -29,8 +29,8 @@ public class AvisCSVReader {
         CSVReader reader = null;
         CSVWriter writer = null;
         try {
-            reader = new CSVReader(new FileReader(csvFile),'\t');
-            writer = new CSVWriter(new FileWriter(new File(outputdirectory, "kom_ikke_med.csv")), ',');
+            reader = new CSVReader(new FileReader(csvFile));
+            writer = new CSVWriter(new FileWriter(new File(outputdirectory, "kom_ikke_med.csv")));
             String[] line;
             reader.readNext();//overskrifter
 

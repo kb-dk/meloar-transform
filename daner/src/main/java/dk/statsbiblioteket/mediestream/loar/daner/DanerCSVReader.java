@@ -30,8 +30,8 @@ public class DanerCSVReader {
         CSVReader reader = null;
         CSVWriter writer = null;
         try {
-            reader = new CSVReader(new FileReader(csvFile), ';');
-            writer = new CSVWriter(new FileWriter(new File(outputdirectory, "kom_ikke_med.csv")), ',');
+            reader = new CSVReader(new FileReader(csvFile));
+            writer = new CSVWriter(new FileWriter(new File(outputdirectory, "kom_ikke_med.csv")));
             String[] line;
             reader.readNext();//overskrifter
             while ((line = reader.readNext()) != null) {
@@ -50,6 +50,8 @@ public class DanerCSVReader {
         } catch (TransformerException e) {
             e.printStackTrace();
         } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

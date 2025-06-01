@@ -10,7 +10,7 @@
     <parent>
         <groupId>dk.statsbiblioteket.medieplatform</groupId>
         <artifactId>meloar-transform</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <version>0.3-SNAPSHOT</version>
     </parent>
 
 
@@ -32,11 +32,12 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <version>3.3.0</version>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>dk.statsbiblioteket.mediestream.loar.fof.Packager</mainClass>
+                            <mainClass>dk.statsbiblioteket.mediestream.loar.daner.DanerPackager</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -46,8 +47,8 @@
                 <version>2.3.2</version>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
         </plugins>

@@ -13,3 +13,24 @@ https://servicedesk.kb.dk/otrs/index.pl?Action=AgentTicketZoom;TicketID=100319
 
 Da der kun er tale om 5 årgange, gør vi det manuelt. 
 Det her er et godt start-sted http://labs.statsbiblioteket.dk/labsapi/api//api-docs?url=/labsapi/api/openapi.yaml
+
+Vi vil gerne opdatere med et år ved hvert nytår. For at bruge den åbne labs api kræver det at der åbnes op for et 
+nyt år i apien. Det kan Toke gøre. Det tager ikke særlig lang tid for Toke. Når det er åbent tager det heller ikke 
+ret lang tid for Bolette at udtrække et nyt år og lægge det på LOAR.
+
+## 2025
+
+Filerne er for store til at uploade på web-siden, derfor følgende:
+
+Eksporter sidste års item (uden bitstream)
+`/data/dspace/bin/dspace export -t ITEM -i 1902/8769 -d /data/dspace/temp/newspapers -n 3 -x`
+
+Kopier 
+`scp -r dspace@dspace-prod-01.kb.dk:/data/dspace/temp/newspapers/3 resources/`
+
+Rediger og kopier ny Simple Archive Format (SAF)
+`baj@baj-fedora:~/Projects/meloar-transform/newspapers/src/main$ scp -r resources/4 dspace@dspace-prod-01.kb.dk:/data/dspace/temp/newspapers/`
+
+Importer
+`/data/dspace/bin/dspace import -a -e dm-admin@kb.dk -c 1902/283 -s items-dir -m mapfile4`
+

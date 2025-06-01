@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<dublin_core schema="dc">
+  <dcvalue element="contributor" qualifier="author">Royal&#x20;Danish&#x20;Library</dcvalue>
+  <dcvalue element="date" qualifier="issued">2025</dcvalue>
+  <dcvalue element="description" qualifier="abstract" language="da_DK">Newspapers&#x20;from&#x20;1884.&#x20;OCR&#x20;text&#x20;in&#x20;csv&#x20;file.</dcvalue>
+  <dcvalue element="language" qualifier="iso" language="da_DK">dk</dcvalue>
+  <dcvalue element="rights" qualifier="none" language="*">CC0&#x20;1.0&#x20;Universal</dcvalue>
+  <dcvalue element="rights" qualifier="uri" language="*">http:&#x2F;&#x2F;creativecommons.org&#x2F;publicdomain&#x2F;zero&#x2F;1.0&#x2F;</dcvalue>
+  <dcvalue element="subject" qualifier="none" language="da_DK">1884</dcvalue>
+  <dcvalue element="title" qualifier="none" language="da_DK">Newspapers&#x20;from&#x20;1884</dcvalue>
+  <dcvalue element="type" qualifier="none" language="da_DK">Dataset</dcvalue>
+</dublin_core>
