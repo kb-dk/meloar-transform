@@ -21,3 +21,11 @@ Brug itemupdate -addbitstream
 `/data/dspace/bin/dspace itemupdate -A -e dm-admin@kb.dk -s /data/dspace/temp/statpub -t`
 
 Husk tmux eller lignende, hvis det altså er installeret!
+
+Mindre rettelser på stage
+Export fra Stage igen (inklusiv bitstrems). Husk at bruge --migrate.
+    `/data/dspace/bin/dspace export -t ITEM -i 1902/50 -d /data/dspace/exports/ -n 5 --migrate`
+
+Importer på Prod
+`/data/dspace/bin/dspace import -a -e dm-admin@kb.dk -c 1902/49116 -s /data/dspace/imports/statpub/ -m mapfile`
+
